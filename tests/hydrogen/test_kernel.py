@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
+"""
 import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,13 +28,11 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 #equilibrium
 #gas.equilibrate('HP')
 
-
 #integrate ODE
 r = ct.IdealGasConstPressureReactor(gas)
 sim = ct.ReactorNet([r])
 time = 0.0
 states = ct.SolutionArray(gas, extra=['t'])
-
 
 evals = []
 Revec = []
@@ -42,12 +43,12 @@ while sim.time < 1000:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel()
+    lam,R,L,f = gas.get_kernel(jacobian='numeric')
     evals.append(lam)
     Revec.append(R)
     Levec.append(L)
     fvec.append(f)
-    
+
 evals = np.array(evals)
 Revec = np.array(Revec)
 Levec = np.array(Levec)
