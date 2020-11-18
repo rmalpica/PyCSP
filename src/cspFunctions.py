@@ -3,7 +3,7 @@
 """
 Created on Fri Nov 13 09:30:10 2020
 
-@author: riccardo
+@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
 
 import numpy as np
@@ -44,23 +44,9 @@ def kernel_pyJac(gas):
     """Computes CSP kernel, using PyJac to get RHS and analytic Jacobian.
     Returns [evals,Revec,Levec,amplitudes]"""
     
-    #setup the state vector
-    y = np.zeros(gas.n_species)
-    y[0] = gas.T
-    y[1:] = gas.Y[:-1]   #last value is zero (N2)
+    ydot = rhs_const_p_pyJac(gas)
     
-    #create a dydt vector
-    ydot = np.zeros_like(y)
-    pj.py_dydt(0, gas.P, y, ydot)
-    
-    #create a jacobian vector
-    jac = np.zeros(gas.n_species * gas.n_species)
-    
-    #evaluate the Jacobian
-    pj.py_eval_jacobian(0, gas.P, y, jac)
-    
-    #reshape as 2D array
-    jac2D = jac.reshape(gas.n_species,gas.n_species).transpose()
+    jac2D = jac_pyJac(gas)
     
     #eigensystem
     evals,Revec,Levec = eigsys(jac2D)
@@ -71,6 +57,25 @@ def kernel_pyJac(gas):
     
     return[evals,Revec,Levec,f]
 
+
+def jac_pyJac(gas):
+    """Computes analytic Jacobian, using PyJac.
+    Returns a 2D array [jac]"""
+    #setup the state vector
+    y = np.zeros(gas.n_species)
+    y[0] = gas.T
+    y[1:] = gas.Y[:-1]
+    
+    #create a jacobian vector
+    jac = np.zeros(gas.n_species * gas.n_species)
+    
+    #evaluate the Jacobian
+    pj.py_eval_jacobian(0, gas.P, y, jac)
+    
+    #reshape as 2D array
+    jac2D = jac.reshape(gas.n_species,gas.n_species).transpose()
+    
+    return jac2D
 
 
 def eigsys(jac):        
@@ -109,6 +114,7 @@ def evec_pos_ampl(Revec,Levec,f):
     
     return[Revec,Levec,f]
 
+
 def rhs_const_p(gas):
     """Computes chemical RHS"""
     
@@ -123,7 +129,7 @@ def rhs_const_p(gas):
     ydot[0] = - R * gas.T * np.dot(gas.standard_enthalpies_RT, wdot) * orho / gas.cp_mass
     ydot[1:] = wdot * Wk * orho
     
-    return[ydot]
+    return ydot
 
 
 def rhs_const_p_pyJac(gas):
@@ -137,6 +143,5 @@ def rhs_const_p_pyJac(gas):
     #create ydot vector
     ydot = np.zeros_like(y)
     pj.py_dydt(0, gas.P, y, ydot)
-    ydot = np.append(ydot,0)
        
-    return[ydot]
+    return ydot

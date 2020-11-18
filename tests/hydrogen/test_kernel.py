@@ -2,8 +2,9 @@
 import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
-import cspFunctions as csp
 import sys
+sys.path.insert(0,'../..')
+import src.cspFunctions as csp
 
 #create gas from original mechanism file gri30.cti
 gas = csp.CanteraCSP('hydrogen.cti')
@@ -37,7 +38,7 @@ Revec = []
 Levec = []
 fvec = []
 sim.set_initial_time(0.0)
-while sim.time < 1000.0:
+while sim.time < 1000:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
