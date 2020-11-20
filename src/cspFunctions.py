@@ -17,6 +17,7 @@ class CanteraCSP(ct.Solution):
         self.Revec = []
         self.Levec = []
         self.f = []
+        self.tau = []
         self._changed = False
 
     def __setattr__(self, key, value):
@@ -29,11 +30,13 @@ class CanteraCSP(ct.Solution):
                 
     def update_kernel(self, jacobian):
         if jacobian == 'analytic':    
-            self.evals,self.Revec,self.Levec,self.f = kernel_pyJac(self)            
+            self.evals,self.Revec,self.Levec,self.f = self.kernel_pyJac()            
         elif jacobian == 'numeric':
-            self.evals,self.Revec,self.Levec,self.f = kernel(self)
+            self.evals,self.Revec,self.Levec,self.f = self.kernel()
         else:
             print("Invalid jacobian keyword")
+        
+        self.tau = timescales(self.eval)
             
         self._changed = False
         
@@ -44,95 +47,139 @@ class CanteraCSP(ct.Solution):
         return [self.evals,self.Revec,self.Levec,self.f]
         
 
-def kernel_pyJac(gas):
-    """Computes CSP kernel, using PyJac to get RHS and analytic Jacobian.
-    Returns [evals,Revec,Levec,amplitudes]"""
+        """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
+        """
+    def kernel_pyJac(self):
+        """Computes CSP kernel, using PyJac to get RHS and analytic Jacobian.
+        Returns [evals,Revec,Levec,amplitudes].
+        Input must be an instance of the CSPCantera class"""
+        
+        ydot = self.rhs_const_p_pyJac()
+        
+        jac2D = self.jac_pyJac()
+        
+        #eigensystem
+        evals,Revec,Levec = eigsys(jac2D)
+        f = np.matmul(Levec,ydot)
+        
+        #rotate eigenvectors such that amplitudes are positive    
+        Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+        
+        return[evals,Revec,Levec,f]
     
-    ydot = rhs_const_p_pyJac(gas)
     
-    jac2D = jac_pyJac(gas)
+    def kernel(self):
+        """Computes CSP kernel numerically.
+        Returns [evals,Revec,Levec,amplitudes]. 
+        Input must be an instance of the CSPCantera class"""
     
-    #eigensystem
-    evals,Revec,Levec = eigsys(jac2D)
-    f = np.matmul(Levec,ydot)
-    
-    #rotate eigenvectors such that amplitudes are positive    
-    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
-    
-    return[evals,Revec,Levec,f]
+        ydot = self.rhs_const_p()
+        
+        jac2D = self.jac_numeric()
+        
+        #eigensystem
+        evals,Revec,Levec = eigsys(jac2D)
+        f = np.matmul(Levec,ydot)
+        
+        #rotate eigenvectors such that amplitudes are positive    
+        Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+        
+        return[evals,Revec,Levec,f]
 
+    """ ~~~~~~~~~~~~ JACOBIAN ~~~~~~~~~~~~~
+    """
+    def jac_pyJac(self):
+        """Computes analytic Jacobian, using PyJac.
+        Returns a 2D array [jac]. 
+        Input must be an instance of the CSPCantera class"""
+        #setup the state vector
+        y = np.zeros(self.n_species)
+        y[0] = self.T
+        y[1:] = self.Y[:-1]
+        
+        #create a jacobian vector
+        jac = np.zeros(self.n_species * self.n_species)
+        
+        #evaluate the Jacobian
+        pj.py_eval_jacobian(0, self.P, y, jac)
+        
+        #reshape as 2D array
+        jac2D = jac.reshape(self.n_species,self.n_species).transpose()
+        
+        return jac2D
 
-def kernel(gas):
-    """Computes CSP kernel numerically.
-    Returns [evals,Revec,Levec,amplitudes]"""
+    def jac_numeric(self):
+        """Computes numerical Jacobian.
+        Returns a 2D array [jac]. Input must be an instance of the CSPCantera class"""
+        roundoff = np.finfo(float).eps
+        sro = np.sqrt(roundoff)
+        #setup the state vector
+        T = self.T
+        y = self.Y   #ns-long
+        ydot = self.rhs_const_p()   #ns-long (T,Y1,...,Yn-1)
+        
+        #create a jacobian vector
+        jac = np.zeros(self.n_species * self.n_species)
+        jac2D = jac.reshape(self.n_species,self.n_species)
+        
+        #evaluate the Jacobian
+        for i in range(self.n_species-1):
+            dy = np.zeros(self.n_species)
+            dy[i] = max(sro*abs(y[i]),1e-8)
+            self.set_unnormalized_mass_fractions(y+dy)
+            ydotp = self.rhs_const_p()
+            dydot = ydotp-ydot
+            jac2D[:,i+1] = dydot/dy[i]
+        
+        self.Y = y
 
-    ydot = rhs_const_p(gas)
-    
-    jac2D = jac(gas)
-    
-    #eigensystem
-    evals,Revec,Levec = eigsys(jac2D)
-    f = np.matmul(Levec,ydot)
-    
-    #rotate eigenvectors such that amplitudes are positive    
-    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
-    
-    return[evals,Revec,Levec,f]
-
-
-def jac_pyJac(gas):
-    """Computes analytic Jacobian, using PyJac.
-    Returns a 2D array [jac]"""
-    #setup the state vector
-    y = np.zeros(gas.n_species)
-    y[0] = gas.T
-    y[1:] = gas.Y[:-1]
-    
-    #create a jacobian vector
-    jac = np.zeros(gas.n_species * gas.n_species)
-    
-    #evaluate the Jacobian
-    pj.py_eval_jacobian(0, gas.P, y, jac)
-    
-    #reshape as 2D array
-    jac2D = jac.reshape(gas.n_species,gas.n_species).transpose()
-    
-    return jac2D
-
-def jac(gas):
-    """Computes numerical Jacobian.
-    Returns a 2D array [jac]"""
-    roundoff = np.finfo(float).eps
-    sro = np.sqrt(roundoff)
-    #setup the state vector
-    T = gas.T
-    y = gas.Y   #ns-long
-    ydot = rhs_const_p(gas)   #ns-long (T,Y1,...,Yn-1)
-    
-    #create a jacobian vector
-    jac = np.zeros(gas.n_species * gas.n_species)
-    jac2D = jac.reshape(gas.n_species,gas.n_species)
-    
-    #evaluate the Jacobian
-    for i in range(gas.n_species-1):
-        dy = np.zeros(gas.n_species)
-        dy[i] = max(sro*abs(y[i]),1e-8)
-        gas.set_unnormalized_mass_fractions(y+dy)
-        ydotp = rhs_const_p(gas)
+        dT = max(sro*abs(T),1e-3)
+        self.TP = T+dT,self.P
+        ydotp = self.rhs_const_p()
         dydot = ydotp-ydot
-        jac2D[:,i+1] = dydot/dy[i]
-    
-    gas.Y = y
+        jac2D[:,0] = dydot/dT
+        
+        self.TP = T,self.P
+           
+        return jac2D
 
-    dT = max(sro*abs(T),1e-3)
-    gas.TP = T+dT,gas.P
-    ydotp = rhs_const_p(gas)
-    dydot = ydotp-ydot
-    jac2D[:,0] = dydot/dT
+    """ ~~~~~~~~~~~~ RHS ~~~~~~~~~~~~~
+    """
+    def rhs_const_p(self):
+        """Computes chemical RHS [shape:(ns)]. 
+        Input must be an instance of the CSPCantera class"""
+        
+        ns = self.n_species    
+        ydot = np.zeros(ns+1)
+        Wk = self.molecular_weights
+        R = ct.gas_constant
+        
+        wdot = self.net_production_rates
+        orho = 1./self.density
+        
+        ydot[0] = - R * self.T * np.dot(self.standard_enthalpies_RT, wdot) * orho / self.cp_mass
+        ydot[1:] = wdot * Wk * orho
+        
+        return ydot[:-1]
     
-    gas.TP = T,gas.P
-       
-    return jac2D
+    
+    def rhs_const_p_pyJac(self):
+        """Retrieves chemical RHS from PyJac [shape(ns)]. 
+        Input must be an instance of the CSPCantera class"""
+        
+        #setup the state vector
+        y = np.zeros(self.n_species)
+        y[0] = self.T
+        y[1:] = self.Y[:-1]
+        
+        #create ydot vector
+        ydot = np.zeros_like(y)
+        pj.py_dydt(0, self.P, y, ydot)
+           
+        return ydot
+    
+""" ~~~~~~~~~~~~ EIGEN ~~~~~~~~~~~~~
+"""
 
 def eigsys(jac):        
     """Returns eigensystem (evals, Revec, Levec). Input must be a 2D array"""
@@ -162,7 +209,7 @@ def eigsys(jac):
 
 
 def evec_pos_ampl(Revec,Levec,f):
-    """changes sign to eigenvectors based on sign of corresponding mode amplitude"""
+    """changes sign to eigenvectors based on sign of corresponding mode amplitude."""
     idx = np.flatnonzero(f < 0)
     Revec[:,idx] = - Revec[:,idx]
     Levec[idx,:] = - Levec[idx,:]
@@ -171,33 +218,20 @@ def evec_pos_ampl(Revec,Levec,f):
     return[Revec,Levec,f]
 
 
-def rhs_const_p(gas):
-    """Computes chemical RHS [shape:(ns)]"""
+def timescales(evals):
+    tau = [1.0/abslam if abslam > 0 else 1e-20 for abslam in np.absolute(evals)]
     
-    ns = gas.n_species    
-    ydot = np.zeros(ns+1)
-    Wk = gas.molecular_weights
-    R = ct.gas_constant
-    
-    wdot = gas.net_production_rates
-    orho = 1./gas.density
-    
-    ydot[0] = - R * gas.T * np.dot(gas.standard_enthalpies_RT, wdot) * orho / gas.cp_mass
-    ydot[1:] = wdot * Wk * orho
-    
-    return ydot[:-1]
+    return tau
 
 
-def rhs_const_p_pyJac(gas):
-    """Retrieves chemical RHS from PyJac [shape(ns)]"""
+
+""" ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
+"""
+
+"""
+def findM(self):
+    np = len(self.Revec)
+    nel = self.n_elements - 1   #-1 accounts for removed N2 in jacobian calc
+    nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
+"""    
     
-    #setup the state vector
-    y = np.zeros(gas.n_species)
-    y[0] = gas.T
-    y[1:] = gas.Y[:-1]
-    
-    #create ydot vector
-    ydot = np.zeros_like(y)
-    pj.py_dydt(0, gas.P, y, ydot)
-       
-    return ydot
