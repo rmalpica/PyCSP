@@ -3,21 +3,23 @@
 """
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-
+import sys
 import numpy as np
 import pyjacob as pj
 import cantera as ct
+
 
 class CanteraCSP(ct.Solution):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)        
         self.rhs = []
         self.jac = []
-        self.eval = []
+        self.evals = []
         self.Revec = []
         self.Levec = []
         self.f = []
         self.tau = []
+        self.M = 0
         self._changed = False
 
     def __setattr__(self, key, value):
@@ -29,22 +31,40 @@ class CanteraCSP(ct.Solution):
             return self._changed
                 
     def update_kernel(self, jacobian):
+        """Computes the CSP kernel"""
         if jacobian == 'analytic':    
             self.evals,self.Revec,self.Levec,self.f = self.kernel_pyJac()            
         elif jacobian == 'numeric':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
         else:
             print("Invalid jacobian keyword")
+            sys.exit()
         
-        self.tau = timescales(self.eval)
+        self.tau = timescales(self.evals)
             
         self._changed = False
         
     def get_kernel(self, jacobian):
+        """Retrieves the stored CSP kernel"""
         if self.is_changed(): 
             self.update_kernel(jacobian)
             self._changed = False
         return [self.evals,self.Revec,self.Levec,self.f]
+    
+    def calc_exhausted_modes(self,rtol,atol):
+        """Computes the number of exhausted modes. Requires a kernel to be already
+        computed"""
+        self.M = self.findM(rtol,atol)
+        return self.M
+ 
+    
+        """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
+        """
+    def stateTY(self):
+        y = np.zeros(self.n_species+1)
+        y[0] = self.T
+        y[1:] = self.Y
+        return y
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
@@ -178,6 +198,51 @@ class CanteraCSP(ct.Solution):
            
         return ydot
     
+    """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
+    """
+    def findM(self,rtol,atol):
+        nv = len(self.Revec)
+        nEl = self.n_elements - 1   #-1 accounts for removed N2 in jacobian calc
+        #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
+        imPart = self.evals.imag!=0
+        nModes = nv - nEl
+        ewt = setEwt(self.stateTY(),rtol,atol)
+        
+        delw = np.zeros(nv)
+        for j in range(nModes-1):          #loop over eligible modes (last excluded)
+            taujp1 = self.tau[j+1]              #timescale of next (slower) mode
+            Aj = self.Revec[j]                  #this mode right evec
+            fj = self.f[j]                      #this mode amplitued
+            lamj = self.evals[j].real           #this mode eigenvalue (real part)
+            
+            for i in range(nv):
+                Aji = Aj[i]                     #i-th component of this mode Revec
+                delw[i] = delw[i] + modeContribution(Aji,fj,taujp1,lamj)    #contribution of j-th mode to i-th var            
+                if np.abs(delw[i]) > ewt[i]:
+                    if j==0:
+                        M = 0
+                    else:
+                        M = j-1 if (imPart[j] and imPart[j-1]) else j    #if j is the second of a pair, move back by 2                    
+                    return M
+    
+        print("All modes are exhausted")
+        M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
+        return M
+        
+  
+
+
+def setEwt(y,rtol,atol):   
+    ewt = [rtol * absy + atol if absy >= 1.0e-6 else absy + atol for absy in np.absolute(y)]
+    return ewt
+
+
+def modeContribution(a,f,tau,lam):
+    delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
+    return delwMi
+        
+    
+    
 """ ~~~~~~~~~~~~ EIGEN ~~~~~~~~~~~~~
 """
 
@@ -203,6 +268,9 @@ def eigsys(jac):
 
     #compute left eigenvectors, amplitudes
     Levec = np.linalg.inv(Revec)
+    
+    #transpose Revec
+    Revec = np.transpose(Revec)
 
     
     return[evals,Revec,Levec]
@@ -219,19 +287,9 @@ def evec_pos_ampl(Revec,Levec,f):
 
 
 def timescales(evals):
-    tau = [1.0/abslam if abslam > 0 else 1e-20 for abslam in np.absolute(evals)]
+    tau = [1.0/abslam if abslam > 0 else 1e+20 for abslam in np.absolute(evals)]
     
     return tau
 
 
 
-""" ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
-"""
-
-"""
-def findM(self):
-    np = len(self.Revec)
-    nel = self.n_elements - 1   #-1 accounts for removed N2 in jacobian calc
-    nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
-"""    
-    
