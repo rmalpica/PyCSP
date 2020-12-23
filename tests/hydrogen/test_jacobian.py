@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0,'../..')
 import src.cspFunctions as csp
 
-#create gas from original mechanism file gri30.cti
+#create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
 #reorder the gas to match pyJac (N2 in last place)
 n2_ind = gas.species_index('N2')

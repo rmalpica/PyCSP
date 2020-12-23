@@ -10,6 +10,7 @@ sys.path.insert(0,'../..')
 import src.cspFunctions as csp
 import src.utils as utils
 
+#-------CREATE DATA---------
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
 #reorder the gas to match pyJac (N2 in last place)
@@ -26,48 +27,68 @@ P = ct.one_atm
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 
-#equilibrium
-#gas.equilibrate('HP')
 
-#integrate ODE
+#integrate ODE and dump test data
 r = ct.IdealGasConstPressureReactor(gas)
 sim = ct.ReactorNet([r])
 time = 0.0
 states = ct.SolutionArray(gas, extra=['t'])
-
-
-evals = []
-Revec = []
-Levec = []
-fvec = []
-Mr2a8 = []
-Mr3a9 = []
-Mr4a1 = []
 
 sim.set_initial_time(0.0)
 while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
+
+dataout = np.concatenate((states.t[:,np.newaxis],states.T[:,np.newaxis],states.P[:,np.newaxis],states.Y),axis=1)
+with open('testdata.dat','w') as f:
+    np.savetxt(f,dataout,fmt='%.16e', delimiter=' ')
+
+
+
+
+#-------IMPORT DATA---------
+#read data from file
+data = np.loadtxt('testdata.dat')
+time = data[:,0]
+Temp = data[:,1]
+Pressure = data[:,2]
+Y =  data[:,3:]
+
+
+gas = csp.CanteraCSP('hydrogen.cti')
+#reorder the gas to match pyJac (N2 in last place)
+n2_ind = gas.species_index('N2')
+specs = gas.species()[:]
+gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
+        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
+        reactions=gas.reactions())
+
+evals = []
+Revec = []
+Levec = []
+fvec = []
+M = []
+
+for step in range(time.shape[0]):
+    gas.TP = Temp[step],Pressure[step]
+    gas.Y = Y[step]
     lam,R,L,f = gas.get_kernel(jacobian='numeric')
-    NofDM28 = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
-    NofDM39 = gas.calc_exhausted_modes(rtol=1.0e-3,atol=1.0e-9)
-    NofDM41 = gas.calc_exhausted_modes(rtol=1.0e-4,atol=1.0e-10)
+    NofDM = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
+
     evals.append(lam)
     Revec.append(R)
     Levec.append(L)
     fvec.append(f)
-    Mr2a8.append(NofDM28)
-    Mr3a9.append(NofDM39)
-    Mr4a1.append(NofDM41)
+    M.append(NofDM)
+
 
 evals = np.array(evals)
 Revec = np.array(Revec)
 Levec = np.array(Levec)
 fvec = np.array(fvec)
-Mr2a8 = np.array(Mr2a8)
-Mr3a9 = np.array(Mr3a9)
-Mr4a1 = np.array(Mr4a1)
+M = np.array(M)
+
 
 
 #plot solution
@@ -97,21 +118,15 @@ plt.tight_layout()
 plt.show()
 
 #plot eigenvalues and lambda_M+1
-evalMr2a8 = utils.select_eval(evals,Mr2a8)
-evalMr3a9 = utils.select_eval(evals,Mr3a9)
-evalMr4a1 = utils.select_eval(evals,Mr4a1)
+evalM = utils.select_eval(evals,M)
 logevals = np.clip(np.log10(np.abs(evals)),0,100)*np.sign(evals.real)
-logevalMr2a8 = np.clip(np.log10(np.abs(evalMr2a8)),0,100)*np.sign(evalMr2a8.real)
-logevalMr3a9 = np.clip(np.log10(np.abs(evalMr3a9)),0,100)*np.sign(evalMr3a9.real)
-logevalMr4a1 = np.clip(np.log10(np.abs(evalMr4a1)),0,100)*np.sign(evalMr4a1.real)
+logevalM = np.clip(np.log10(np.abs(evalM)),0,100)*np.sign(evalM.real)
 print('plotting eigenvalues...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(evals.shape[1]):
     #color = next(ax._get_lines.prop_cycler)['color']
     ax.plot(states.t, logevals[:,idx], color='black', marker='.', markersize = 5,linestyle = 'None')
-ax.plot(states.t, logevalMr2a8, color='orange', marker='.', markersize = 4,linestyle = 'None', label='lam(M+1) rtol e-2; atol e-8')
-ax.plot(states.t, logevalMr3a9, color='blue', marker='.', markersize = 3,linestyle = 'None', label='lam(M+1) rtol e-3; atol e-9')
-ax.plot(states.t, logevalMr4a1, color='red', marker='.', markersize = 2,linestyle = 'None', label='lam(M+1)  rtol e-4; atol e-10')
+ax.plot(states.t, logevalM, color='orange', marker='.', markersize = 4,linestyle = 'None', label='lam(M+1) rtol e-2; atol e-8')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('evals')
 ax.set_ylim([-9, 6])
@@ -126,9 +141,7 @@ plt.savefig('eigenvalues.png', dpi=500, transparent=False)
 print('plotting exhausted modes...')
 fig, ax = plt.subplots(figsize=(6,4))
 #ax.plot(states.t, M, color='black')
-ax.plot(Mr2a8, color='orange', label='rtol e-2; atol e-8')
-ax.plot(Mr3a9, color='red', label='rtol e-3; atol e-9')
-ax.plot(Mr4a1, color='blue', label='rtol e-4; atol e-10')
+ax.plot(M, color='orange', label='rtol e-2; atol e-8')
 #ax.set_xlabel('time (s)')
 ax.set_xlabel('# timestep')
 ax.set_ylabel('M')
