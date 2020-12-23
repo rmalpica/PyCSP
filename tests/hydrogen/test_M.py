@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0,'../..')
 import src.cspFunctions as csp
+import src.utils as utils
 
 #create gas from original mechanism file gri30.cti
 gas = csp.CanteraCSP('hydrogen.cti')
@@ -95,26 +96,37 @@ plt.xlim(0., 0.002)
 plt.tight_layout()
 plt.show()
 
-#plot eigenvalues
+#plot eigenvalues and lambda_M+1
+evalMr2a8 = utils.select_eval(evals,Mr2a8)
+evalMr3a9 = utils.select_eval(evals,Mr3a9)
+evalMr4a1 = utils.select_eval(evals,Mr4a1)
 logevals = np.clip(np.log10(np.abs(evals)),0,100)*np.sign(evals.real)
+logevalMr2a8 = np.clip(np.log10(np.abs(evalMr2a8)),0,100)*np.sign(evalMr2a8.real)
+logevalMr3a9 = np.clip(np.log10(np.abs(evalMr3a9)),0,100)*np.sign(evalMr3a9.real)
+logevalMr4a1 = np.clip(np.log10(np.abs(evalMr4a1)),0,100)*np.sign(evalMr4a1.real)
 print('plotting eigenvalues...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(evals.shape[1]):
     #color = next(ax._get_lines.prop_cycler)['color']
-    ax.plot(states.t, logevals[:,idx], color='black', marker='.', markersize = 2,linestyle = 'None')
+    ax.plot(states.t, logevals[:,idx], color='black', marker='.', markersize = 5,linestyle = 'None')
+ax.plot(states.t, logevalMr2a8, color='orange', marker='.', markersize = 4,linestyle = 'None', label='lam(M+1) rtol e-2; atol e-8')
+ax.plot(states.t, logevalMr3a9, color='blue', marker='.', markersize = 3,linestyle = 'None', label='lam(M+1) rtol e-3; atol e-9')
+ax.plot(states.t, logevalMr4a1, color='red', marker='.', markersize = 2,linestyle = 'None', label='lam(M+1)  rtol e-4; atol e-10')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('evals')
 ax.set_ylim([-9, 6])
 ax.set_xlim([0., 0.001])
 ax.grid(False)
+ax.legend()
 plt.show()
+plt.savefig('eigenvalues.png', dpi=500, transparent=False)
 
 
 #plot exhausted modes
 print('plotting exhausted modes...')
 fig, ax = plt.subplots(figsize=(6,4))
 #ax.plot(states.t, M, color='black')
-ax.plot(Mr2a8, color='black', label='rtol e-2; atol e-8')
+ax.plot(Mr2a8, color='orange', label='rtol e-2; atol e-8')
 ax.plot(Mr3a9, color='red', label='rtol e-3; atol e-9')
 ax.plot(Mr4a1, color='blue', label='rtol e-4; atol e-10')
 #ax.set_xlabel('time (s)')
