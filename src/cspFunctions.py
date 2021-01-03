@@ -247,7 +247,9 @@ def modeContribution(a,f,tau,lam):
 """
 
 def eigsys(jac):        
-    """Returns eigensystem (evals, Revec, Levec). Input must be a 2D array"""
+    """Returns eigensystem (evals, Revec, Levec). Input must be a 2D array.
+    Both Revec (since it is transposed) and Levec (naturally) contain row vectors,
+    such that an eigenvector can be retrieved using R/Levec[index,:] """
     
     evals, Revec = np.linalg.eig(jac)
     
