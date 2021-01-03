@@ -279,7 +279,7 @@ def eigsys(jac):
 def evec_pos_ampl(Revec,Levec,f):
     """changes sign to eigenvectors based on sign of corresponding mode amplitude."""
     idx = np.flatnonzero(f < 0)
-    Revec[:,idx] = - Revec[:,idx]
+    Revec[idx,:] = - Revec[idx,:]
     Levec[idx,:] = - Levec[idx,:]
     f[idx] = -f[idx]
     
