@@ -23,12 +23,12 @@ class CanteraCSP(ct.Solution):
         self._changed = False
 
     def __setattr__(self, key, value):
-            if key != '_changed':
-                self._changed = True
-            super().__setattr__(key, value)
+        if key != '_changed':
+            self._changed = True
+        super().__setattr__(key, value)
 
     def is_changed(self):
-            return self._changed
+        return self._changed
                 
     def update_kernel(self, jacobian):
         """Computes the CSP kernel"""
@@ -65,6 +65,11 @@ class CanteraCSP(ct.Solution):
         y[0] = self.T
         y[1:] = self.Y
         return y
+    
+    
+    def set_stateTY(self,y):
+        self.Y = y[1:]
+        self.TP = y[0],self.P
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
@@ -225,7 +230,7 @@ class CanteraCSP(ct.Solution):
                         M = j-1 if (imPart[j] and imPart[j-1]) else j    #if j is the second of a pair, move back by 2                    
                     return M
     
-        print("All modes are exhausted")
+        #print("All modes are exhausted")
         M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
         return M
         
