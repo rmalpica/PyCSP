@@ -79,13 +79,13 @@ class CanteraCSP(ct.Solution):
         Returns [evals,Revec,Levec,amplitudes].
         Input must be an instance of the CSPCantera class"""
         
-        ydot = self.rhs_const_p_pyJac()
+        self.rhs = self.rhs_const_p_pyJac()
         
         jac2D = self.jac_pyJac()
         
         #eigensystem
         evals,Revec,Levec = eigsys(jac2D)
-        f = np.matmul(Levec,ydot)
+        f = np.matmul(Levec,self.rhs)
         
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
@@ -98,13 +98,13 @@ class CanteraCSP(ct.Solution):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
     
-        ydot = self.rhs_const_p()
+        self.rhs = self.rhs_const_p()
         
         jac2D = self.jac_numeric()
         
         #eigensystem
         evals,Revec,Levec = eigsys(jac2D)
-        f = np.matmul(Levec,ydot)
+        f = np.matmul(Levec,self.rhs)
         
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
@@ -207,7 +207,7 @@ class CanteraCSP(ct.Solution):
     """
     def findM(self,rtol,atol):
         nv = len(self.Revec)
-        nEl = self.n_elements - 1   #-1 accounts for removed N2 in jacobian calc
+        nEl = self.n_elements - 1   #-1 accounts for removed inert in jacobian calc
         #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
         imPart = self.evals.imag!=0
         nModes = nv - nEl
@@ -234,7 +234,31 @@ class CanteraCSP(ct.Solution):
         M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
         return M
         
-  
+
+    """ ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
+    """
+    
+    def TSR(self):
+        n = len(self.Revec)
+        nEl = self.n_elements - 1  #-1 accounts for removed inert in jacobian calc
+        #deal with amplitudes of cmplx conjugates
+        fvec = self.f
+        imPart = self.evals.imag!=0
+        for i in range(1,n):
+            if (imPart[i] and imPart[i-1]):
+                fvec[i] = np.sqrt(fvec[i]**2 + fvec[i-1]**2)
+                fvec[i-1] = fvec[i]
+        fnorm = fvec / np.linalg.norm(self.rhs)
+        #deal with zero-eigenvalues (if any)
+        fvec[self.evals==0.0] = 0.0
+        weights = fnorm**2
+        weights[0:self.M] = 0.0 #excluding fast modes
+        weights[n-nEl:n] = 0.0 #excluding conserved modes
+        normw = np.sum(weights)
+        weights = weights / normw if normw > 0 else np.zeros(n)
+        TSR = np.sum([weights[i] * np.sign(self.evals[i].real) * np.abs(self.evals[i]) for i in range(n)])
+        return TSR
+          
 
 
 def setEwt(y,rtol,atol):   
@@ -272,6 +296,7 @@ def eigsys(jac):
         Revec[:,i] = re
         Revec[:,i+1] = im
     Revec = Revec.real  #no need to carry imaginary part anymore  
+    
 
     #compute left eigenvectors, amplitudes
     Levec = np.linalg.inv(Revec)
@@ -297,6 +322,4 @@ def timescales(evals):
     tau = [1.0/abslam if abslam > 0 else 1e+20 for abslam in np.absolute(evals)]
     
     return tau
-
-
 
