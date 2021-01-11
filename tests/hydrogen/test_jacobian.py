@@ -80,8 +80,8 @@ plt.tight_layout()
 plt.show()
 
 #plot eigenvalues
-logevals = np.clip(np.log10(np.abs(evals)),0,100)*np.sign(evals.real)
-logevals_an = np.clip(np.log10(np.abs(evals_an)),0,100)*np.sign(evals_an.real)
+logevals = np.clip(np.log10(np.abs(evals.real)),0,100)*np.sign(evals.real)
+logevals_an = np.clip(np.log10(np.abs(evals_an.real)),0,100)*np.sign(evals_an.real)
 print('plotting eigenvalues...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(evals.shape[1]):
