@@ -81,10 +81,10 @@ class CanteraCSP(ct.Solution):
         
         self.rhs = self.rhs_const_p_pyJac()
         
-        jac2D = self.jac_pyJac()
+        self.jac = self.jac_pyJac()
         
         #eigensystem
-        evals,Revec,Levec = eigsys(jac2D)
+        evals,Revec,Levec = eigsys(self.jac)
         f = np.matmul(Levec,self.rhs)
         
         #rotate eigenvectors such that amplitudes are positive    
@@ -100,10 +100,10 @@ class CanteraCSP(ct.Solution):
     
         self.rhs = self.rhs_const_p()
         
-        jac2D = self.jac_numeric()
+        self.jac = self.jac_numeric()
         
         #eigensystem
-        evals,Revec,Levec = eigsys(jac2D)
+        evals,Revec,Levec = eigsys(self.jac)
         f = np.matmul(Levec,self.rhs)
         
         #rotate eigenvectors such that amplitudes are positive    
@@ -242,7 +242,7 @@ class CanteraCSP(ct.Solution):
         n = len(self.Revec)
         nEl = self.n_elements - 1  #-1 accounts for removed inert in jacobian calc
         #deal with amplitudes of cmplx conjugates
-        fvec = self.f
+        fvec = self.f.copy()
         imPart = self.evals.imag!=0
         for i in range(1,n):
             if (imPart[i] and imPart[i-1]):
