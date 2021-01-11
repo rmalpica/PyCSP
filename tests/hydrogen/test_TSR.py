@@ -95,8 +95,8 @@ plt.show()
 
 #plot eigenvalues and lambda_M+1
 evalM = utils.select_eval(evals,M)
-logevals = np.clip(np.log10(np.abs(evals)),0,100)*np.sign(evals.real)
-logevalM = np.clip(np.log10(np.abs(evalM)),0,100)*np.sign(evalM.real)
+logevals = np.clip(np.log10(np.abs(evals.real)),0,100)*np.sign(evals.real)
+logevalM = np.clip(np.log10(np.abs(evalM.real)),0,100)*np.sign(evalM.real)
 logTSR = np.clip(np.log10(np.abs(tsr)),0,100)*np.sign(tsr)
 print('plotting eigenvalues...')
 fig, ax = plt.subplots(figsize=(6,4))
