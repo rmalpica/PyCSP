@@ -14,12 +14,11 @@ class CSPsolver:
     def __init__(self, gas):   
         self.gas = gas
         self.P = gas.P
-        self.ns = gas.n_species
         self.y = []
         self.t = []
         self.Qs = []
         self.Rc = []
-        self.dt = 0
+        self.dt = 1e+10
         self.csprtol = 1e-2
         self.cspatol = 1e-8
         self.jacobiantype = 'analytic'
@@ -40,8 +39,8 @@ class CSPsolver:
     
     def rhs(self,y):
         self.gas.set_stateTY(y)
-        dydt = np.zeros(self.ns+1)
-        dydt[:self.ns] = self.gas.rhs_const_p()
+        dydt = np.zeros(self.gas.nv+1) #adding last term (zero) corresponding to inert species
+        dydt[:self.gas.nv] = self.gas.rhs
         return dydt
         
     def set_integrator(self,**kwargs):
@@ -68,7 +67,7 @@ class CSPsolver:
         self.M = M
         self.Qs = QsMatrix(A,B,M)
         #advance in time dydt = Qsg with RK4 to ystar
-        self.dt = smart_timescale(tau,self.factor,self.M)
+        self.dt = smart_timescale(tau,self.factor,self.M,lam[M],self.dt)
         ystar = self.RK4csp()
         #calc CSP basis and radical matrix Rc in ystar
         self.y = ystar
@@ -116,11 +115,13 @@ def RCorr(A,f,lam,M):
         Rc[0:ns] = np.matmul(np.matmul(np.transpose(A[0:M]), np.linalg.inv(lamMat.real)), f[0:M])
     return Rc
 
-def smart_timescale(tau,factor,M):
+def smart_timescale(tau,factor,M,lamM,dtold):
     if(M==0):
         dt = tau[M]*factor
     else:
         dt = tau[M-1] + factor*(tau[M]-tau[M-1])
+    if(lamM.real > 0):
+        dt = min(dt,1.5*dtold)
     return dt
         
        
