@@ -11,7 +11,8 @@ import cantera as ct
 
 class CanteraCSP(ct.Solution):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)        
+        super().__init__(*args, **kwargs)  
+        self.nv = 0
         self.rhs = []
         self.jac = []
         self.evals = []
@@ -79,6 +80,8 @@ class CanteraCSP(ct.Solution):
         Returns [evals,Revec,Levec,amplitudes].
         Input must be an instance of the CSPCantera class"""
         
+        self.nv = self.n_species 
+        
         self.rhs = self.rhs_const_p_pyJac()
         
         self.jac = self.jac_pyJac()
@@ -98,6 +101,8 @@ class CanteraCSP(ct.Solution):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
     
+        self.nv = self.n_species     
+        
         self.rhs = self.rhs_const_p()
         
         self.jac = self.jac_numeric()
@@ -171,7 +176,7 @@ class CanteraCSP(ct.Solution):
     """ ~~~~~~~~~~~~ RHS ~~~~~~~~~~~~~
     """
     def rhs_const_p(self):
-        """Computes chemical RHS [shape:(ns)]. 
+        """Computes chemical RHS [shape:(ns)]. Inert (last) term is not returned.
         Input must be an instance of the CSPCantera class"""
         
         ns = self.n_species    
@@ -189,7 +194,7 @@ class CanteraCSP(ct.Solution):
     
     
     def rhs_const_p_pyJac(self):
-        """Retrieves chemical RHS from PyJac [shape(ns)]. 
+        """Retrieves chemical RHS from PyJac [shape(ns)]. Inert (last) term is not returned.
         Input must be an instance of the CSPCantera class"""
         
         #setup the state vector
@@ -323,3 +328,48 @@ def timescales(evals):
     
     return tau
 
+
+
+
+
+""" ~~~~~~~~~~~~ OTHER JAC FORMULATIONS ~~~~~~~~~~~~~
+"""
+
+def jacThermal(gas):
+    nv = len(gas.evals)
+    R = ct.gas_constant
+    hspec = gas.standard_enthalpies_RT
+    Hspec = hspec * R * gas.T
+    Wk = gas.molecular_weights
+    cp = gas.cp_mass
+    TJrow = Hspec[:-1] / ( Wk[:-1] * cp)
+    TJcol = gas.jac[1:nv,0]
+    JacThermal = np.outer(TJcol,TJrow)
+    return JacThermal
+
+def jacKinetic(gas):
+    nv = len(gas.evals)
+    jacKinetic = gas.jac[1:nv,1:nv] 
+    return jacKinetic
+        
+def kernel_kinetic_only(gas):
+    nv = len(gas.evals)
+    kineticjac = jacKinetic(gas)       
+    #eigensystem
+    evals,Revec,Levec = eigsys(kineticjac)
+    f = np.matmul(Levec,gas.rhs[1:nv])
+    #rotate eigenvectors such that amplitudes are positive    
+    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+    return[evals,Revec,Levec,f]
+    
+def kernel_constrained_jac(gas):
+    nv = len(gas.evals)
+    kineticjac = jacKinetic(gas)  
+    thermaljac = jacThermal(gas)   
+    jac = kineticjac - thermaljac
+    #eigensystem
+    evals,Revec,Levec = eigsys(jac)
+    f = np.matmul(Levec,gas.rhs[1:nv])
+    #rotate eigenvectors such that amplitudes are positive    
+    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+    return[evals,Revec,Levec,f]

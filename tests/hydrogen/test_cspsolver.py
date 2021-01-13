@@ -34,7 +34,7 @@ t_end = 1e-2
 
 #integrate ODE with CSP solver
 solver = cspS.CSPsolver(gas)
-solver.set_integrator(cspRtol=1e-3,cspAtol=1e-9,factor=0.25,jacobiantype='numeric')
+solver.set_integrator(cspRtol=1e-2,cspAtol=1e-8,factor=0.2,jacobiantype='analytic')
 solver.set_initial_value(y0,t0)
 
 states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'M': 0})
