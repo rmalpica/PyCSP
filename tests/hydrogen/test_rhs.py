@@ -34,23 +34,34 @@ sim = ct.ReactorNet([r])
 time = 0.0
 states = ct.SolutionArray(gas, extra=['t'])
 
-evals_an = []
-evals = []
-
+RHS = []
+splitRHS = []
+varnames = np.array(['Temperature']+gas.species_names)[:-1]
 sim.set_initial_time(0.0)
-while sim.time < 1000:
+while sim.time < 1.5e-3:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
-    lam_an,R_an,L_an,f_an = gas.get_kernel(jacobiantype='analytic')
-    evals.append(lam)
-    evals_an.append(lam_an)
+    rhs = gas.rhs_const_p_pyJac()
+    checkrhs = np.isclose(rhs, gas.rhs_const_p(), rtol=1e-6, atol=1e-6, equal_nan=False)
+    if(np.any(checkrhs == False)):
+        idx = np.array([*range(len(rhs))]) 
+        print('Mismatch between analytical and numerical RHS')
+        print(varnames[~checkrhs],rhs[~checkrhs],gas.rhs_const_p()[~checkrhs])
+    Smat = gas.generalized_Stoich_matrix()
+    rvec = gas.R_vector()
+    splitrhs = np.dot(Smat,rvec)
+    checksplitrhs = np.isclose(gas.rhs_const_p(), splitrhs[:-1], rtol=1e-6, atol=0, equal_nan=False)
+    if(np.any(checkrhs == False)):
+        idx = np.array([*range(len(rhs))]) 
+        print('Mismatch between numerical RHS and S.r')
+        print(varnames[~checkrhs],gas.rhs_const_p()[~checkrhs],splitrhs[:-1][~checkrhs])
+    RHS.append(rhs)
+    splitRHS.append(splitrhs)
 
-evals_an = np.array(evals_an)    
-evals = np.array(evals)
 
-
+RHS = np.array(RHS)
+splitRHS = np.array(splitRHS)
 
 #plot solution
 print('plotting ODE solution...')
@@ -78,19 +89,16 @@ plt.xlim(0., 0.002)
 plt.tight_layout()
 plt.show()
 
-#plot eigenvalues
-logevals = np.clip(np.log10(np.abs(evals.real)),0,100)*np.sign(evals.real)
-logevals_an = np.clip(np.log10(np.abs(evals_an.real)),0,100)*np.sign(evals_an.real)
-print('plotting eigenvalues...')
+#plot RHS(T)
+
+print('plotting RHS...')
 fig, ax = plt.subplots(figsize=(6,4))
-for idx in range(evals.shape[1]):
-    ax.plot(states.t, logevals[:,idx], color='black', marker='.', markersize = 3,linestyle = 'None')
-    ax.plot(states.t, logevals_an[:,idx], color='red', marker='.', markersize = 2,linestyle = 'None')
+ax.plot(states.t, RHS[:,0], color='black', label='rhs pyJac')
+ax.plot(states.t, splitRHS[:,0], color='red', linestyle='--',label='S.r')
 ax.set_xlabel('time (s)')
-ax.set_ylabel('evals')
-ax.set_ylim([-9, 6])
+ax.set_ylabel('rhs[T]')
 ax.set_xlim([0., 0.001])
 ax.grid(False)
-plt.legend(['Numeric', 'Analytic'])
+ax.legend()
 plt.show()
 #plt.savefig('figures/prediction_combined.png', dpi=500, transparent=False)

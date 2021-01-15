@@ -73,7 +73,7 @@ M = []
 for step in range(time.shape[0]):
     gas.TP = Temp[step],Pressure[step]
     gas.Y = Y[step]
-    lam,R,L,f = gas.get_kernel(jacobian='numeric')
+    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
     NofDM = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
 
     evals.append(lam)

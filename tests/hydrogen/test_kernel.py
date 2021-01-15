@@ -43,7 +43,7 @@ while sim.time < 1000:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel(jacobian='numeric')
+    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
     evals.append(lam)
     Revec.append(R)
     Levec.append(L)

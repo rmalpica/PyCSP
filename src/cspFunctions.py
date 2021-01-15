@@ -5,14 +5,17 @@
 """
 import sys
 import numpy as np
-import pyjacob as pj
 import cantera as ct
+from .cspThermoKinetics import CanteraThermoKinetics
 
 
-class CanteraCSP(ct.Solution):
+class CanteraCSP(CanteraThermoKinetics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
         self.nv = 0
+        self.jacobiantype = 'numeric'
+        self.rtol = 1.0e-2
+        self.atol = 1.0e-8
         self.rhs = []
         self.jac = []
         self.evals = []
@@ -20,7 +23,6 @@ class CanteraCSP(ct.Solution):
         self.Levec = []
         self.f = []
         self.tau = []
-        self.M = 0
         self._changed = False
 
     def __setattr__(self, key, value):
@@ -28,35 +30,84 @@ class CanteraCSP(ct.Solution):
             self._changed = True
         super().__setattr__(key, value)
 
+
     def is_changed(self):
         return self._changed
+
                 
-    def update_kernel(self, jacobian):
+    def update_kernel(self, jacobiantype):
         """Computes the CSP kernel"""
-        if jacobian == 'analytic':    
+        jacobiantype = self.jacobiantype
+        if jacobiantype == 'analytic': 
             self.evals,self.Revec,self.Levec,self.f = self.kernel_pyJac()            
-        elif jacobian == 'numeric':
+        elif jacobiantype == 'numeric':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
         else:
             print("Invalid jacobian keyword")
             sys.exit()
-        
         self.tau = timescales(self.evals)
-            
         self._changed = False
+ 
         
-    def get_kernel(self, jacobian):
-        """Retrieves the stored CSP kernel"""
+    def get_kernel(self, **kwargs):
+        """Retrieves the stored CSP kernel.
+        Optional argument is jacobiantype.
+        If provided and different from stored value, kernel is recomputed"""
+        jacobiantype = self.jacobiantype
+        for key, value in kwargs.items():
+            if (key == 'jacobiantype'): 
+                jacobiantype = value
+            else:
+                sys.exit("unknown argument %s" %key)
+        if (self.jacobiantype != jacobiantype): self.jacobiantype = jacobiantype
         if self.is_changed(): 
-            self.update_kernel(jacobian)
+            self.update_kernel(self.jacobiantype)
             self._changed = False
         return [self.evals,self.Revec,self.Levec,self.f]
+ 
     
-    def calc_exhausted_modes(self,rtol,atol):
-        """Computes the number of exhausted modes. Requires a kernel to be already
-        computed"""
-        self.M = self.findM(rtol,atol)
-        return self.M
+    def calc_exhausted_modes(self, **kwargs):
+        """Computes number of exhausted modes (M). 
+        Optional arguments are rtol and atol for the calculation of M.
+        If not provided, uses default or previously set values"""
+        rtol = self.rtol
+        atol = self.atol
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            else:
+                sys.exit("unknown argument %s" %key)
+        M = self.findM(rtol,atol)
+        return M
+ 
+       
+    def calc_TSR(self,**kwargs):
+        """Computes number of exhausted modes (M) and the TSR. 
+        Optional arguments are rtol and atol for the calculation of M.
+        If not provided, uses default or previously set values.
+        The calculated value of M can be retrieved by passing
+        the optional argument getM=True"""
+        rtol = self.rtol
+        atol = self.atol
+        getM = False
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            elif (key == 'getM'): 
+                getM = value
+            else:
+                sys.exit("unknown argument %s" %key)
+        M = self.findM(rtol, atol)
+        TSR = self.findTSR(M)
+        if getM:
+            return [TSR, M]
+        else:
+            return TSR
+        
  
     
         """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
@@ -116,97 +167,7 @@ class CanteraCSP(ct.Solution):
         
         return[evals,Revec,Levec,f]
 
-    """ ~~~~~~~~~~~~ JACOBIAN ~~~~~~~~~~~~~
-    """
-    def jac_pyJac(self):
-        """Computes analytic Jacobian, using PyJac.
-        Returns a 2D array [jac]. 
-        Input must be an instance of the CSPCantera class"""
-        #setup the state vector
-        y = np.zeros(self.n_species)
-        y[0] = self.T
-        y[1:] = self.Y[:-1]
-        
-        #create a jacobian vector
-        jac = np.zeros(self.n_species * self.n_species)
-        
-        #evaluate the Jacobian
-        pj.py_eval_jacobian(0, self.P, y, jac)
-        
-        #reshape as 2D array
-        jac2D = jac.reshape(self.n_species,self.n_species).transpose()
-        
-        return jac2D
 
-    def jac_numeric(self):
-        """Computes numerical Jacobian.
-        Returns a 2D array [jac]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
-        #setup the state vector
-        T = self.T
-        y = self.Y   #ns-long
-        ydot = self.rhs_const_p()   #ns-long (T,Y1,...,Yn-1)
-        
-        #create a jacobian vector
-        jac = np.zeros(self.n_species * self.n_species)
-        jac2D = jac.reshape(self.n_species,self.n_species)
-        
-        #evaluate the Jacobian
-        for i in range(self.n_species-1):
-            dy = np.zeros(self.n_species)
-            dy[i] = max(sro*abs(y[i]),1e-8)
-            self.set_unnormalized_mass_fractions(y+dy)
-            ydotp = self.rhs_const_p()
-            dydot = ydotp-ydot
-            jac2D[:,i+1] = dydot/dy[i]
-        
-        self.Y = y
-
-        dT = max(sro*abs(T),1e-3)
-        self.TP = T+dT,self.P
-        ydotp = self.rhs_const_p()
-        dydot = ydotp-ydot
-        jac2D[:,0] = dydot/dT
-        
-        self.TP = T,self.P
-           
-        return jac2D
-
-    """ ~~~~~~~~~~~~ RHS ~~~~~~~~~~~~~
-    """
-    def rhs_const_p(self):
-        """Computes chemical RHS [shape:(ns)]. Inert (last) term is not returned.
-        Input must be an instance of the CSPCantera class"""
-        
-        ns = self.n_species    
-        ydot = np.zeros(ns+1)
-        Wk = self.molecular_weights
-        R = ct.gas_constant
-        
-        wdot = self.net_production_rates
-        orho = 1./self.density
-        
-        ydot[0] = - R * self.T * np.dot(self.standard_enthalpies_RT, wdot) * orho / self.cp_mass
-        ydot[1:] = wdot * Wk * orho
-        
-        return ydot[:-1]
-    
-    
-    def rhs_const_p_pyJac(self):
-        """Retrieves chemical RHS from PyJac [shape(ns)]. Inert (last) term is not returned.
-        Input must be an instance of the CSPCantera class"""
-        
-        #setup the state vector
-        y = np.zeros(self.n_species)
-        y[0] = self.T
-        y[1:] = self.Y[:-1]
-        
-        #create ydot vector
-        ydot = np.zeros_like(y)
-        pj.py_dydt(0, self.P, y, ydot)
-           
-        return ydot
     
     """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
     """
@@ -243,7 +204,7 @@ class CanteraCSP(ct.Solution):
     """ ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
     """
     
-    def TSR(self):
+    def findTSR(self,M):
         n = len(self.Revec)
         nEl = self.n_elements - 1  #-1 accounts for removed inert in jacobian calc
         #deal with amplitudes of cmplx conjugates
@@ -257,7 +218,7 @@ class CanteraCSP(ct.Solution):
         #deal with zero-eigenvalues (if any)
         fvec[self.evals==0.0] = 0.0
         weights = fnorm**2
-        weights[0:self.M] = 0.0 #excluding fast modes
+        weights[0:M] = 0.0 #excluding fast modes
         weights[n-nEl:n] = 0.0 #excluding conserved modes
         normw = np.sum(weights)
         weights = weights / normw if normw > 0 else np.zeros(n)
