@@ -27,14 +27,14 @@ class CSPsolver:
     
     def CSPcore(self,y):
         self.gas.set_stateTY(y)
-        lam,A,B,f = self.gas.get_kernel(jacobian=self.jacobiantype)
+        lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
         M = self.gas.calc_exhausted_modes(rtol=self.csprtol, atol=self.cspatol)
         tau = cspF.timescales(lam)
         return [A,B,f,lam,tau,M]
     
     def CSPcoreBasic(self,y):
         self.gas.set_stateTY(y)
-        lam,A,B,f = self.gas.get_kernel(jacobian=self.jacobiantype)
+        lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
         return [A,B,f,lam]
     
     def rhs(self,y):
