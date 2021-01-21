@@ -79,7 +79,10 @@ class CanteraCSP(CanteraThermoKinetics):
                 atol = value
             else:
                 sys.exit("unknown argument %s" %key)
-        M = self.findM(rtol,atol)
+        if self.is_changed(): 
+            self.update_kernel(self.jacobiantype)
+            self._changed = False
+        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         return M
  
        
@@ -101,14 +104,92 @@ class CanteraCSP(CanteraThermoKinetics):
                 getM = value
             else:
                 sys.exit("unknown argument %s" %key)
-        M = self.findM(rtol, atol)
-        TSR = self.findTSR(M)
+        if self.is_changed(): 
+            self.update_kernel(self.jacobiantype)
+            self._changed = False
+        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         if getM:
             return [TSR, M]
         else:
             return TSR
+
+    def calc_TSRindices(self,**kwargs):
+        """Computes number of exhausted modes (M), the TSR and its indices. 
+        Optional arguments are rtol and atol for the calculation of M.
+        If not provided, uses default or previously set values.
+        The calculated value of M can be retrieved by passing
+        the optional argument getM=True"""
+        rtol = self.rtol
+        atol = self.atol
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            else:
+                sys.exit("unknown argument %s" %key)
+        if self.is_changed(): 
+            self.update_kernel(self.jacobiantype)
+            self._changed = False
+        Smat = self.generalized_Stoich_matrix()
+        rvec = self.R_vector()
+        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
+        TSRidx = TSRindices(weights, self.evals)
+        CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
+        TSRind = TSR_participation_indices(TSRidx, CSPidx)
+        return TSRind
         
- 
+        
+    def calc_CSPindices(self,**kwargs):
+        """Computes number of exhausted modes (M) and the CSP Indices. 
+        Optional arguments are rtol and atol for the calculation of M.
+        If not provided, uses default or previously set values.
+        The calculated value of M can be retrieved by passing
+        the optional argument getM=True"""
+        rtol = self.rtol
+        atol = self.atol
+        getM = False
+        getAPI = False
+        getImpo = False
+        getspeciestype = False
+        API = None
+        Ifast = None
+        Islow = None
+        species_type = None
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            elif (key == 'getM'): 
+                getM = value
+            elif (key == 'API'): 
+                getAPI = value
+            elif (key == 'Impo'): 
+                getImpo = value
+            elif (key == 'species_type'): 
+                getspeciestype = value
+            else:
+                sys.exit("unknown argument %s" %key)
+        if self.is_changed(): 
+            self.update_kernel(self.jacobiantype)
+            self._changed = False
+        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        Smat = self.generalized_Stoich_matrix()
+        rvec = self.R_vector()
+        if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
+        if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec,self.Levec,M,Smat,rvec)
+        if getspeciestype: 
+            pointers = CSP_pointers(self.Revec,self.Levec)
+            species_type = classify_species(self.stateTY(), self.rhs, pointers, M)
+        if getM:
+            return [API, Ifast, Islow, species_type, M]
+        else:
+            return [API, Ifast, Islow, species_type]
+        
+        
     
         """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
         """
@@ -169,62 +250,37 @@ class CanteraCSP(CanteraThermoKinetics):
 
 
     
-    """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
-    """
-    def findM(self,rtol,atol):
-        nv = len(self.Revec)
-        nEl = self.n_elements - 1   #-1 accounts for removed inert in jacobian calc
-        #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
-        imPart = self.evals.imag!=0
-        nModes = nv - nEl
-        ewt = setEwt(self.stateTY(),rtol,atol)
-        
-        delw = np.zeros(nv)
-        for j in range(nModes-1):          #loop over eligible modes (last excluded)
-            taujp1 = self.tau[j+1]              #timescale of next (slower) mode
-            Aj = self.Revec[j]                  #this mode right evec
-            fj = self.f[j]                      #this mode amplitued
-            lamj = self.evals[j].real           #this mode eigenvalue (real part)
-            
-            for i in range(nv):
-                Aji = Aj[i]                     #i-th component of this mode Revec
-                delw[i] = delw[i] + modeContribution(Aji,fj,taujp1,lamj)    #contribution of j-th mode to i-th var            
-                if np.abs(delw[i]) > ewt[i]:
-                    if j==0:
-                        M = 0
-                    else:
-                        M = j-1 if (imPart[j] and imPart[j-1]) else j    #if j is the second of a pair, move back by 2                    
-                    return M
+""" ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
+"""
+def findM(n_elements,stateTY,evals,Revec,tau,f,rtol,atol):
+    nv = len(Revec)
+    nEl = n_elements - 1   #-1 accounts for removed inert in jacobian calc
+    #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
+    imPart = evals.imag!=0
+    nModes = nv - nEl
+    ewt = setEwt(stateTY,rtol,atol)
     
-        #print("All modes are exhausted")
-        M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
-        return M
+    delw = np.zeros(nv)
+    for j in range(nModes-1):          #loop over eligible modes (last excluded)
+        taujp1 = tau[j+1]              #timescale of next (slower) mode
+        Aj = Revec[j]                  #this mode right evec
+        fj = f[j]                      #this mode amplitued
+        lamj = evals[j].real           #this mode eigenvalue (real part)
         
+        for i in range(nv):
+            Aji = Aj[i]                     #i-th component of this mode Revec
+            delw[i] = delw[i] + modeContribution(Aji,fj,taujp1,lamj)    #contribution of j-th mode to i-th var            
+            if np.abs(delw[i]) > ewt[i]:
+                if j==0:
+                    M = 0
+                else:
+                    M = j-1 if (imPart[j] and imPart[j-1]) else j    #if j is the second of a pair, move back by 2                    
+                return M
 
-    """ ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
-    """
-    
-    def findTSR(self,M):
-        n = len(self.Revec)
-        nEl = self.n_elements - 1  #-1 accounts for removed inert in jacobian calc
-        #deal with amplitudes of cmplx conjugates
-        fvec = self.f.copy()
-        imPart = self.evals.imag!=0
-        for i in range(1,n):
-            if (imPart[i] and imPart[i-1]):
-                fvec[i] = np.sqrt(fvec[i]**2 + fvec[i-1]**2)
-                fvec[i-1] = fvec[i]
-        fnorm = fvec / np.linalg.norm(self.rhs)
-        #deal with zero-eigenvalues (if any)
-        fvec[self.evals==0.0] = 0.0
-        weights = fnorm**2
-        weights[0:M] = 0.0 #excluding fast modes
-        weights[n-nEl:n] = 0.0 #excluding conserved modes
-        normw = np.sum(weights)
-        weights = weights / normw if normw > 0 else np.zeros(n)
-        TSR = np.sum([weights[i] * np.sign(self.evals[i].real) * np.abs(self.evals[i]) for i in range(n)])
-        return TSR
-          
+    #print("All modes are exhausted")
+    M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
+    return M
+
 
 
 def setEwt(y,rtol,atol):   
@@ -232,13 +288,58 @@ def setEwt(y,rtol,atol):
     return ewt
 
 
+
 def modeContribution(a,f,tau,lam):
     delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
-    return delwMi
-        
+    return delwMi        
+
+
+
+
+""" ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
+"""
+    
+def findTSR(n_elements,rhs,evals,Revec,f,M):
+    n = len(Revec)
+    nEl = n_elements - 1  #-1 accounts for removed inert in jacobian calc
+    #deal with amplitudes of cmplx conjugates
+    fvec = f.copy()
+    imPart = evals.imag!=0
+    for i in range(1,n):
+        if (imPart[i] and imPart[i-1]):
+            fvec[i] = np.sqrt(fvec[i]**2 + fvec[i-1]**2)
+            fvec[i-1] = fvec[i]
+    fnorm = fvec / np.linalg.norm(rhs)
+    #deal with zero-eigenvalues (if any)
+    fvec[evals==0.0] = 0.0
+    weights = fnorm**2
+    weights[0:M] = 0.0 #excluding fast modes
+    weights[n-nEl:n] = 0.0 #excluding conserved modes
+    normw = np.sum(weights)
+    weights = weights / normw if normw > 0 else np.zeros(n)
+    TSR = np.sum([weights[i] * np.sign(evals[i].real) * np.abs(evals[i]) for i in range(n)])
+    return [TSR, weights]
+          
+
+def TSRindices(weights, evals):
+    """Ns array containing participation index of mode i to TSR"""
+    n = len(weights)
+    Index = np.zeros((n))
+    norm = np.sum([weights[i] * np.abs(evals[i]) for i in range(n)])
+    for i in range(n):
+        Index[i] = weights[i] * np.abs(evals[i])
+        Index[i] = Index[i]/norm if norm > 1e-10 else 0.0
+    return Index
+
+def TSR_participation_indices(TSRidx, CSPidx):
+    """2Nr array containing participation index of reaction k to TSR"""
+    Index = np.matmul(np.transpose(CSPidx),np.abs(TSRidx))
+    norm = np.sum(np.abs(Index))
+    Index = Index/norm if norm > 0 else Index*0.0
+    return Index
     
     
-""" ~~~~~~~~~~~~ EIGEN ~~~~~~~~~~~~~
+""" ~~~~~~~~~~~~ EIGEN FUNC ~~~~~~~~~~~~~
 """
 
 def eigsys(jac):        
@@ -334,3 +435,55 @@ def kernel_constrained_jac(gas):
     #rotate eigenvectors such that amplitudes are positive    
     Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
     return[evals,Revec,Levec,f]
+
+
+
+""" ~~~~~~~~~~~~ INDEXES FUNC ~~~~~~~~~~~~~
+"""
+
+def CSPIndices(Proj, Smat, rvec):
+    ns = Smat.shape[0]
+    nr = Smat.shape[1]
+    Index = np.zeros((ns,nr))
+    for i in range(ns):
+        norm = 0.0
+        for k in range(nr):
+            Index[i,k] = np.dot(Proj[i,:],Smat[:,k]) * rvec[k]
+            norm = norm + abs(Index[i,k])
+        for k in range(nr):
+            Index[i,k] = Index[i,k]/norm if (norm != 0.0) else 0.0 
+    #np.sum(abs(Index),axis=1) check: a n-long array of ones
+    return Index
+
+def CSP_amplitude_participation_indices(B, Smat, rvec):
+    """Ns x 2Nr array containing participation index of reaction k to variable i"""
+    API = CSPIndices(B, Smat, rvec)
+    return API
+
+def CSP_importance_indices(A,B,M,Smat,rvec):
+    """Ns x 2Nr array containing fast/slow importance index of reaction k to variable i"""
+    fastProj = np.matmul(np.transpose(A[0:M]),B[0:M])
+    Ifast = CSPIndices(fastProj, Smat, rvec)
+    slowProj = np.matmul(np.transpose(A[M:]),B[M:])
+    Islow = CSPIndices(slowProj, Smat, rvec)      
+    return [Ifast,Islow]
+                
+def CSP_pointers(A,B):
+    nv = A.shape[0]
+    pointers = np.array([[np.transpose(A)[spec,mode]*B[mode,spec] for spec in range(nv)] for mode in range(nv)])            
+    return pointers
+
+def classify_species(stateTY, rhs, pointers, M):
+    n = len(stateTY)
+    ytol = 1e-20
+    rhstol = 1e-13
+    sort = np.absolute(np.sum(pointers[:,:M],axis=1)).argsort()[::-1]
+    species_type = np.full(n,'slow',dtype=object)
+    species_type[sort[0:M]] = 'fast'
+    species_type[0] = 'slow'  #temperature is always slow
+    for i in range(1,n):
+        if (stateTY[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace' 
+    return species_type
+        
+    
+    
