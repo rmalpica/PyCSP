@@ -67,3 +67,20 @@ Islow = np.array(Islow)
 classify = np.array(classify)
 TSRAPI = np.array(TSRAPI)
 
+
+
+thr = 0.1
+TSRreacIdx = np.unique(np.nonzero(np.abs(TSRAPI) > thr)[1])  #indexes of reactions with TSRapi > thr
+TSRreac = TSRAPI[:,TSRreacIdx]
+print('plotting TSR indices...')
+fig, ax = plt.subplots(figsize=(8,4))
+for idx in range(len(TSRreacIdx)):
+    #color = next(ax._get_lines.prop_cycler)['color']
+    ax.plot(TSRreac[:,idx], label=gas.reaction_names()[TSRreacIdx[idx]])
+ax.set_xlabel('counter')
+ax.set_ylabel('TSR API')
+ax.grid(False)
+box = ax.get_position()
+ax.set_position([box.x0, box.y0, box.width * 0.6, box.height])
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.show()

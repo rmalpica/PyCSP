@@ -131,4 +131,12 @@ class CanteraThermoKinetics(ct.Solution):
            
         return jac2D
 
-        
+    """ ~~~~~~~~~~~~ REAC NAMES ~~~~~~~~~~~~~
+    """     
+    def reaction_names(self):
+        nr = self.n_reactions
+        rnames = self.reaction_equations()
+        reacnames = np.zeros(2*nr,dtype=object)
+        reacnames[0:nr] = [s + ' (Fwd)' for s in rnames]
+        reacnames[nr:2*nr] = [s + ' (Bwd)' for s in rnames]
+        return reacnames
