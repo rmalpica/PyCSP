@@ -54,7 +54,7 @@ class CanteraThermoKinetics(ct.Solution):
     """
     
     def generalized_Stoich_matrix(self):
-        """N_s+1 x 2*N_r matrix containing the S components in column major format, 
+        """N_s x 2*N_r matrix containing the S components in column major format, 
         such that S dot Rvec yields RHS"""
         nu_p = self.product_stoich_coeffs()
         nu_r = self.reactant_stoich_coeffs()
@@ -62,15 +62,15 @@ class CanteraThermoKinetics(ct.Solution):
         numat = np.concatenate((nu_p-nu_r,nu_r-nu_p),axis=1)
         smat = np.vstack([numat[i] * self.molecular_weights[i] for i in range(self.n_species)])/rho
         #compute first row (temperature) of the matrix
-        cp = self.cp_mass
-        hspec = self.standard_enthalpies_RT
-        Hspec = ct.gas_constant * self.T * hspec
+        cp = self.cp_mass #[J/Kg K]
+        hspec = self.standard_enthalpies_RT  #non-dimensional
+        Hspec = ct.gas_constant * self.T * hspec #[J/Kmol]
         smatT = np.sum([- numat[i] * Hspec[i] for i in range(self.n_species)],axis=0)/(rho*cp)
         Smat = np.vstack((smatT,smat))
-        return Smat
+        return Smat[:-1,:]
         
     def R_vector(self):
-        """ 2*N-long vector containing the rates of progress in [Kmol/m3/s]"""        
+        """ 2*Nr-long vector containing the rates of progress in [Kmol/m3/s]"""        
         rvec = np.concatenate((self.forward_rates_of_progress,self.reverse_rates_of_progress))
         return rvec
     
@@ -78,7 +78,7 @@ class CanteraThermoKinetics(ct.Solution):
     """
     def jac_pyJac(self):
         """Computes analytic Jacobian, using PyJac.
-        Returns a 2D array [jac]. 
+        Returns a N_s x N_s array [jac]. 
         Input must be an instance of the CSPCantera class"""
         #setup the state vector
         y = np.zeros(self.n_species)
@@ -98,7 +98,7 @@ class CanteraThermoKinetics(ct.Solution):
 
     def jac_numeric(self):
         """Computes numerical Jacobian.
-        Returns a 2D array [jac]. Input must be an instance of the CSPCantera class"""
+        Returns a N_s x N_s array [jac]. Input must be an instance of the CSPCantera class"""
         roundoff = np.finfo(float).eps
         sro = np.sqrt(roundoff)
         #setup the state vector
