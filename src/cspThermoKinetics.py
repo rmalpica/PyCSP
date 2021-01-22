@@ -131,6 +131,71 @@ class CanteraThermoKinetics(ct.Solution):
            
         return jac2D
 
+
+    def jac_contribution_numeric(self):
+        """Computes contributions of each reaction to numerical Jacobian.
+        Given that g = Sr = Sum_k S_k r^k, it follows that      
+        J(g) = Sum_k^(2nr) J_k, where J_k = Jac(S_k r^k)   
+        S_k r^k is the product of the k-th column of the matrix S and the k-th 
+        component of the vector r. 
+        Returns a list of 2*Nr  (N_s x N_s) arrays [jacK]. Input must be an instance of the CSPCantera class"""
+        roundoff = np.finfo(float).eps
+        sro = np.sqrt(roundoff)
+        ns = self.n_species
+        nr = self.n_reactions
+        #setup the state vector
+        T = self.T
+        y = self.Y   #ns-long
+        Smat = self.generalized_Stoich_matrix()   # ns x 2nr
+        rvec = self.R_vector()    # 2nr-long
+
+        
+        Smatp = np.zeros((ns,ns,2*nr))
+        rvecp = np.zeros((ns,2*nr))       
+        #evaluate Smat and Rvec in y+dy[i]
+        for i in range(ns-1):
+            dy = np.zeros(ns)
+            dy[i] = max(sro*abs(y[i]),1e-8)
+            self.set_unnormalized_mass_fractions(y+dy)
+            Smatp[i+1] = self.generalized_Stoich_matrix()
+            rvecp[i+1] = self.R_vector()
+                    
+        self.Y = y  #reset original Y
+        dT = max(sro*abs(T),1e-3)
+        self.TP = T+dT,self.P
+        Smatp[0] = self.generalized_Stoich_matrix()
+        rvecp[0] = self.R_vector()
+ 
+        self.TP = T,self.P  #reset original T,P
+        
+        
+        JacK = np.zeros((2*nr,ns,ns))
+        #evaluate derivatives per each reaction
+        for k in range(2*nr):
+            jac2D = np.zeros((ns,ns))
+            for i in range(ns-1):
+                dy = np.zeros(ns)
+                dy[i] = max(sro*abs(y[i]),1e-8)
+                ydotp = Smatp[i+1,:,k]*rvecp[i+1,k]
+                ydot  = Smat[:,k]*rvec[k]
+                dydot = ydotp-ydot
+                jac2D[:,i+1] = dydot/dy[i]
+            
+            ydotp = Smatp[0,:,k]*rvecp[0,k]
+            ydot  = Smat[:,k]*rvec[k]
+            dydot = ydotp-ydot
+            dT = max(sro*abs(T),1e-3)
+            jac2D[:,0] = dydot/dT
+            JacK[k] = jac2D
+        
+        #to check for correctness, in main program:
+        #jack = gas.jac_contribution_numeric()
+        #jac=np.sum(jack,axis=0)
+        #jacn = gas.jac_numeric()
+        #np.allclose(jac,jacn,rtol=1e-8,atol=1e-12)
+        
+        return JacK
+
     """ ~~~~~~~~~~~~ REAC NAMES ~~~~~~~~~~~~~
     """     
     def reaction_names(self):

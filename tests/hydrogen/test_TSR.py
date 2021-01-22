@@ -49,7 +49,7 @@ while sim.time < 0.001:
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
     lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
-    NofDM = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
+    NofDM = gas.calc_exhausted_modes(rtol=1.0e-3,atol=1.0e-10)
     omegatau = gas.calc_TSR()
     evals.append(lam)
     Revec.append(R)
