@@ -116,17 +116,25 @@ class CanteraCSP(CanteraThermoKinetics):
 
     def calc_TSRindices(self,**kwargs):
         """Computes number of exhausted modes (M), the TSR and its indices. 
-        Optional arguments are rtol and atol for the calculation of M.
+        Optional argument is type, which can be timescale or amplitude.
+        Default value is amplitude.
+        Other optional arguments are rtol and atol for the calculation of M.
         If not provided, uses default or previously set values.
         The calculated value of M can be retrieved by passing
         the optional argument getM=True"""
         rtol = self.rtol
         atol = self.atol
+        useTPI = False
         for key, value in kwargs.items():
             if (key == 'rtol'): 
                 rtol = value
             elif (key == 'atol'): 
                 atol = value
+            elif (key == 'type'): 
+                if(value == 'timescale'):
+                    useTPI = True
+                elif(value != 'amplitude'):
+                    sys.exit("unknown type %s" %value)
             else:
                 sys.exit("unknown argument %s" %key)
         if self.is_changed(): 
@@ -137,7 +145,11 @@ class CanteraCSP(CanteraThermoKinetics):
         M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         TSRidx = TSRindices(weights, self.evals)
-        CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
+        if (useTPI):
+            JacK = self.jac_contribution_numeric()
+            CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
+        else:
+            CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
         TSRind = TSR_participation_indices(TSRidx, CSPidx)
         return TSRind
         
@@ -154,10 +166,12 @@ class CanteraCSP(CanteraThermoKinetics):
         getAPI = False
         getImpo = False
         getspeciestype = False
+        getTPI = False
         API = None
         Ifast = None
         Islow = None
         species_type = None
+        TPI = None
         for key, value in kwargs.items():
             if (key == 'rtol'): 
                 rtol = value
@@ -171,6 +185,8 @@ class CanteraCSP(CanteraThermoKinetics):
                 getImpo = value
             elif (key == 'species_type'): 
                 getspeciestype = value
+            elif (key == 'TPI'): 
+                getTPI = value
             else:
                 sys.exit("unknown argument %s" %key)
         if self.is_changed(): 
@@ -184,10 +200,13 @@ class CanteraCSP(CanteraThermoKinetics):
         if getspeciestype: 
             pointers = CSP_pointers(self.Revec,self.Levec)
             species_type = classify_species(self.stateTY(), self.rhs, pointers, M)
+        if getTPI:
+            JacK = self.jac_contribution_numeric()
+            TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
         if getM:
-            return [API, Ifast, Islow, species_type, M]
+            return [API, TPI, Ifast, Islow, species_type, M]
         else:
-            return [API, Ifast, Islow, species_type]
+            return [API, TPI, Ifast, Islow, species_type]
         
         
     
@@ -274,7 +293,7 @@ def findM(n_elements,stateTY,evals,Revec,tau,f,rtol,atol):
                 if j==0:
                     M = 0
                 else:
-                    M = j-1 if (imPart[j] and imPart[j-1]) else j    #if j is the second of a pair, move back by 2                    
+                    M = j-1 if (imPart[j] and imPart[j-1] and evals[j].real==evals[j-1].real) else j    #if j is the second of a pair, move back by 2                    
                 return M
 
     #print("All modes are exhausted")
@@ -485,5 +504,28 @@ def classify_species(stateTY, rhs, pointers, M):
         if (stateTY[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace' 
     return species_type
         
+def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):
+    imPart = evals.imag!=0
+    if(imPart[i] and imPart[i-1] and evals[i].real==evals[i-1].real): i = i-1  #if the second of a complex pair, shift back the index by 1
+    Index = np.zeros(2*nr)
+    norm = 0.0
+    if(imPart[i]):
+        for k in range(2*nr):
+            Index[k] = 0.5 * ( np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i]) -
+                np.matmul(np.matmul(B[i+1],JacK[k]),np.transpose(A)[:,i+1]))
+            norm = norm + abs(Index[k])
+    else:
+        for k in range(2*nr):
+            Index[k] = np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i])
+            norm = norm + abs(Index[k])
+    for k in range(2*nr):
+            Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
+    return Index
     
-    
+def CSP_timescale_participation_indices(nr, JacK, evals, A, B):
+    """Ns x 2Nr array containing TPI of reaction k to variable i"""
+    nv = A.shape[0]
+    TPI = np.zeros((nv,2*nr))
+    for i in range(nv):
+        TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B)
+    return TPI    
