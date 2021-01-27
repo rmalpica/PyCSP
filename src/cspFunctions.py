@@ -42,6 +42,10 @@ class CanteraCSP(CanteraThermoKinetics):
             self.evals,self.Revec,self.Levec,self.f = self.kernel_pyJac()            
         elif jacobiantype == 'numeric':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
+        elif jacobiantype == 'constrained':
+            self.evals,self.Revec,self.Levec,self.f = self.kernel_constrained_jac()
+        elif jacobiantype == 'kinetic':
+            self.evals,self.Revec,self.Levec,self.f = self.kernel_kinetic_only()
         else:
             print("Invalid jacobian keyword")
             sys.exit()
@@ -266,6 +270,36 @@ class CanteraCSP(CanteraThermoKinetics):
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         
         return[evals,Revec,Levec,f]
+    
+    
+    def kernel_kinetic_only(self):
+        """Computes kinetic kernel. Its dimension is Nspecies - 1.
+        Returns [evals,Revec,Levec,amplitudes]. 
+        Input must be an instance of the CSPCantera class"""
+        self.nv = self.n_species
+        kineticjac = self.jacKinetic()       
+        #eigensystem
+        evals,Revec,Levec = eigsys(kineticjac)
+        f = np.matmul(Levec,self.rhs_const_p()[1:self.nv])
+        #rotate eigenvectors such that amplitudes are positive    
+        Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+        return[evals,Revec,Levec,f]
+    
+    
+    def kernel_constrained_jac(self):
+        """Computes constrained (to enthalpy) kernel. Its dimension is Nspecies - 1.
+        Returns [evals,Revec,Levec,amplitudes]. 
+        Input must be an instance of the CSPCantera class"""
+        self.nv = self.n_species
+        kineticjac = self.jacKinetic()  
+        thermaljac = self.jacThermal()   
+        jac = kineticjac - thermaljac
+        #eigensystem
+        evals,Revec,Levec = eigsys(jac)
+        f = np.matmul(Levec,self.rhs_const_p()[1:self.nv])
+        #rotate eigenvectors such that amplitudes are positive    
+        Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
+        return[evals,Revec,Levec,f]
 
 
     
@@ -325,7 +359,7 @@ def findTSR(n_elements,rhs,evals,Revec,f,M):
     fvec = f.copy()
     imPart = evals.imag!=0
     for i in range(1,n):
-        if (imPart[i] and imPart[i-1]):
+        if (imPart[i] and imPart[i-1] and evals[i].real==evals[i-1].real):
             fvec[i] = np.sqrt(fvec[i]**2 + fvec[i-1]**2)
             fvec[i-1] = fvec[i]
     fnorm = fvec / np.linalg.norm(rhs)
@@ -413,47 +447,6 @@ def timescales(evals):
 
 
 
-""" ~~~~~~~~~~~~ OTHER JAC FORMULATIONS ~~~~~~~~~~~~~
-"""
-
-def jacThermal(gas):
-    nv = len(gas.evals)
-    R = ct.gas_constant
-    hspec = gas.standard_enthalpies_RT
-    Hspec = hspec * R * gas.T
-    Wk = gas.molecular_weights
-    cp = gas.cp_mass
-    TJrow = Hspec[:-1] / ( Wk[:-1] * cp)
-    TJcol = gas.jac[1:nv,0]
-    JacThermal = np.outer(TJcol,TJrow)
-    return JacThermal
-
-def jacKinetic(gas):
-    nv = len(gas.evals)
-    jacKinetic = gas.jac[1:nv,1:nv] 
-    return jacKinetic
-        
-def kernel_kinetic_only(gas):
-    nv = len(gas.evals)
-    kineticjac = jacKinetic(gas)       
-    #eigensystem
-    evals,Revec,Levec = eigsys(kineticjac)
-    f = np.matmul(Levec,gas.rhs[1:nv])
-    #rotate eigenvectors such that amplitudes are positive    
-    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
-    return[evals,Revec,Levec,f]
-    
-def kernel_constrained_jac(gas):
-    nv = len(gas.evals)
-    kineticjac = jacKinetic(gas)  
-    thermaljac = jacThermal(gas)   
-    jac = kineticjac - thermaljac
-    #eigensystem
-    evals,Revec,Levec = eigsys(jac)
-    f = np.matmul(Levec,gas.rhs[1:nv])
-    #rotate eigenvectors such that amplitudes are positive    
-    Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
-    return[evals,Revec,Levec,f]
 
 
 
