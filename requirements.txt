@@ -1,3 +1,2 @@
 Cantera==2.4.0
-PyJac==1.0.6
 matplotlib
