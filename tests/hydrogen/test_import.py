@@ -13,12 +13,7 @@ import src.utils as utils
 #-------CREATE DATA---------
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
+
 
 #set the gas state
 T = 1000
@@ -57,12 +52,7 @@ Y =  data[:,3:]
 
 
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
+
 
 evals = []
 Revec = []
@@ -73,7 +63,7 @@ M = []
 for step in range(time.shape[0]):
     gas.TP = Temp[step],Pressure[step]
     gas.Y = Y[step]
-    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
+    lam,R,L,f = gas.get_kernel(jacobiantype='full')
     NofDM = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
 
     evals.append(lam)
@@ -119,8 +109,8 @@ plt.show()
 
 #plot eigenvalues and lambda_M+1
 evalM = utils.select_eval(evals,M)
-logevals = np.clip(np.log10(np.abs(evals)),0,100)*np.sign(evals.real)
-logevalM = np.clip(np.log10(np.abs(evalM)),0,100)*np.sign(evalM.real)
+logevals = np.clip(np.log10(1.0+np.abs(evals)),0,100)*np.sign(evals.real)
+logevalM = np.clip(np.log10(1.0+np.abs(evalM)),0,100)*np.sign(evalM.real)
 print('plotting eigenvalues...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(evals.shape[1]):
@@ -156,10 +146,10 @@ print('plotting mode amplitudes...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(fvec.shape[1]):
     #color = next(ax._get_lines.prop_cycler)['color']
-    ax.plot(states.t, np.log(fvec[:,idx]), label='Mode %d' %(idx+1), marker='.', markersize = 2,linestyle = 'None')
+    ax.plot(states.t, np.log10(1e-10+fvec[:,idx]), label='Mode %d' %(idx+1), marker='.', markersize = 2,linestyle = 'None')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('Amplitude')
-ax.set_ylim([-8, 20])
+ax.set_ylim([-8, 10])
 ax.set_xlim([0., 0.001])
 ax.grid(False)
 ax.legend()

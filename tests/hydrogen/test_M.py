@@ -12,12 +12,6 @@ import src.utils as utils
 
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
 
 #set the gas state
 T = 1000
@@ -49,7 +43,7 @@ while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
+    lam,R,L,f = gas.get_kernel(jacobiantype='full')
     NofDM28 = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
     NofDM39 = gas.calc_exhausted_modes(rtol=1.0e-3,atol=1.0e-9)
     NofDM41 = gas.calc_exhausted_modes(rtol=1.0e-4,atol=1.0e-10)
@@ -146,7 +140,7 @@ for idx in range(fvec.shape[1]):
     ax.plot(states.t, np.log10(1e-10+fvec[:,idx]), label='Mode %d' %(idx+1), marker='.', markersize = 2,linestyle = 'None')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('Amplitude')
-ax.set_ylim([-8, 20])
+ax.set_ylim([-8, 10])
 ax.set_xlim([0., 0.001])
 ax.grid(False)
 ax.legend()

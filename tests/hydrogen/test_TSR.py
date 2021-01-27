@@ -12,12 +12,7 @@ import src.utils as utils
 
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
+
 
 #set the gas state
 T = 1000
@@ -48,7 +43,7 @@ while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel(jacobiantype='numeric')
+    lam,R,L,f = gas.get_kernel(jacobiantype='full')
     NofDM = gas.calc_exhausted_modes(rtol=1.0e-3,atol=1.0e-10)
     omegatau = gas.calc_TSR()
     evals.append(lam)
