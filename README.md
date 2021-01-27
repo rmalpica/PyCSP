@@ -9,3 +9,8 @@ Testing:
 1) enter the folder tests/hydrogen
 2) run the command "bash compilePyJac.sh"
 3) run the command "python test_kernel.py"
+
+Several other test scripts are available to test the functionalities related to:
+- exhausted modes (M) 
+- tangential stretching rate (TSR)
+- CSP and TSR indices (importance indices, amplitude and timescale participatio indices, TSR amplitude/timescale participation indices)
