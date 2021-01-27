@@ -6,7 +6,6 @@ import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
-import matplotlib.cm as cm
 import sys
 sys.path.insert(0,'../..')
 import src.cspFunctions as csp
@@ -14,12 +13,6 @@ import src.cspFunctions as csp
 
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
 
 #set the gas state
 T = 1000
@@ -27,7 +20,7 @@ P = ct.one_atm
 #gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
-gas.jacobiantype='numeric'
+gas.jacobiantype='full'
 gas.rtol=1.0e-3
 gas.atol=1.0e-10
 

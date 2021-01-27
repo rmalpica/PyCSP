@@ -11,12 +11,6 @@ import src.cspFunctions as csp
 
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
-#reorder the gas to match pyJac (N2 in last place)
-n2_ind = gas.species_index('N2')
-specs = gas.species()[:]
-gas = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics',
-        species=specs[:n2_ind] + specs[n2_ind + 1:] + [specs[n2_ind]],
-        reactions=gas.reactions())
 
 #set the gas state
 T = 1000
@@ -36,26 +30,21 @@ states = ct.SolutionArray(gas, extra=['t'])
 
 RHS = []
 splitRHS = []
-varnames = np.array(['Temperature']+gas.species_names)[:-1]
+varnames = np.array(['Temperature']+gas.species_names)
 sim.set_initial_time(0.0)
 while sim.time < 1.5e-3:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    rhs = gas.rhs_const_p_pyJac()
-    checkrhs = np.isclose(rhs, gas.rhs_const_p(), rtol=1e-6, atol=1e-6, equal_nan=False)
-    if(np.any(checkrhs == False)):
-        idx = np.array([*range(len(rhs))]) 
-        print('Mismatch between analytical and numerical RHS')
-        print(varnames[~checkrhs],rhs[~checkrhs],gas.rhs_const_p()[~checkrhs])
+    rhs = gas.rhs_const_p()
     Smat = gas.generalized_Stoich_matrix()
     rvec = gas.R_vector()
     splitrhs = np.dot(Smat,rvec)
-    checksplitrhs = np.isclose(gas.rhs_const_p(), splitrhs, rtol=1e-6, atol=0, equal_nan=False)
-    if(np.any(checkrhs == False)):
+    checksplitrhs = np.isclose(rhs, splitrhs, rtol=1e-6, atol=0, equal_nan=False)
+    if(np.any(checksplitrhs == False)):
         idx = np.array([*range(len(rhs))]) 
         print('Mismatch between numerical RHS and S.r')
-        print(varnames[~checkrhs],gas.rhs_const_p()[~checkrhs],splitrhs[~checkrhs])
+        print(varnames[~checksplitrhs],rhs[~checksplitrhs],splitrhs[~checksplitrhs])
     RHS.append(rhs)
     splitRHS.append(splitrhs)
 
@@ -93,8 +82,8 @@ plt.show()
 
 print('plotting RHS...')
 fig, ax = plt.subplots(figsize=(6,4))
-ax.plot(states.t, RHS[:,0], color='black', label='rhs pyJac')
-ax.plot(states.t, splitRHS[:,0], color='red', linestyle='--',label='S.r')
+ax.plot(states.t, RHS[:,-1], color='black', label='rhs')
+ax.plot(states.t, splitRHS[:,-1], color='red', linestyle='--',label='S.r')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('rhs[T]')
 ax.set_xlim([0., 0.001])

@@ -5,15 +5,14 @@
 """
 import sys
 import numpy as np
-import cantera as ct
 from .cspThermoKinetics import CanteraThermoKinetics
 
 
 class CanteraCSP(CanteraThermoKinetics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
-        self.nv = 0
-        self.jacobiantype = 'numeric'
+        self.nv = self.n_species + 1 
+        self.jacobiantype = 'full'
         self.rtol = 1.0e-2
         self.atol = 1.0e-8
         self.rhs = []
@@ -38,9 +37,7 @@ class CanteraCSP(CanteraThermoKinetics):
     def update_kernel(self, jacobiantype):
         """Computes the CSP kernel"""
         jacobiantype = self.jacobiantype
-        if jacobiantype == 'analytic': 
-            self.evals,self.Revec,self.Levec,self.f = self.kernel_pyJac()            
-        elif jacobiantype == 'numeric':
+        if jacobiantype == 'full':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
         elif jacobiantype == 'constrained':
             self.evals,self.Revec,self.Levec,self.f = self.kernel_constrained_jac()
@@ -86,7 +83,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
-        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         return M
  
        
@@ -111,7 +108,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
-        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         if getM:
             return [TSR, M]
@@ -146,11 +143,11 @@ class CanteraCSP(CanteraThermoKinetics):
             self._changed = False
         Smat = self.generalized_Stoich_matrix()
         rvec = self.R_vector()
-        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         TSRidx = TSRindices(weights, self.evals)
         if (useTPI):
-            JacK = self.jac_contribution_numeric()
+            JacK = self.jac_contribution()
             CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
         else:
             CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
@@ -196,16 +193,16 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
-        M = findM(self.n_elements,self.stateTY(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         Smat = self.generalized_Stoich_matrix()
         rvec = self.R_vector()
         if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
         if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec,self.Levec,M,Smat,rvec)
         if getspeciestype: 
             pointers = CSP_pointers(self.Revec,self.Levec)
-            species_type = classify_species(self.stateTY(), self.rhs, pointers, M)
+            species_type = classify_species(self.stateYT(), self.rhs, pointers, M)
         if getTPI:
-            JacK = self.jac_contribution_numeric()
+            JacK = self.jac_contribution()
             TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
         if getM:
             return [API, TPI, Ifast, Islow, species_type, M]
@@ -216,51 +213,33 @@ class CanteraCSP(CanteraThermoKinetics):
     
         """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
         """
-    def stateTY(self):
+    def stateYT(self):
         y = np.zeros(self.n_species+1)
-        y[0] = self.T
-        y[1:] = self.Y
+        ##y[0] = self.T
+        ##y[1:] = self.Y
+        y[-1] = self.T
+        y[0:-1] = self.Y
         return y
     
     
-    def set_stateTY(self,y):
-        self.Y = y[1:]
-        self.TP = y[0],self.P
+    def set_stateYT(self,y):
+        self.Y = y[0:-1]
+        self.TP = y[-1],self.P
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
-        """
-    def kernel_pyJac(self):
-        """Computes CSP kernel, using PyJac to get RHS and analytic Jacobian.
-        Returns [evals,Revec,Levec,amplitudes].
-        Input must be an instance of the CSPCantera class"""
-        
-        self.nv = self.n_species 
-        
-        self.rhs = self.rhs_const_p_pyJac()
-        
-        self.jac = self.jac_pyJac()
-        
-        #eigensystem
-        evals,Revec,Levec = eigsys(self.jac)
-        f = np.matmul(Levec,self.rhs)
-        
-        #rotate eigenvectors such that amplitudes are positive    
-        Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
-        
-        return[evals,Revec,Levec,f]
-    
-    
+        """    
+   
     def kernel(self):
-        """Computes CSP kernel numerically.
+        """Computes CSP kernel. Its dimension is Nspecies + 1.
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
     
-        self.nv = self.n_species     
+        self.nv = self.n_species + 1     
         
         self.rhs = self.rhs_const_p()
         
-        self.jac = self.jac_numeric()
+        self.jac = self.jacobian()
         
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
@@ -273,30 +252,32 @@ class CanteraCSP(CanteraThermoKinetics):
     
     
     def kernel_kinetic_only(self):
-        """Computes kinetic kernel. Its dimension is Nspecies - 1.
+        """Computes kinetic kernel. Its dimension is Nspecies.
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
-        kineticjac = self.jacKinetic()       
+        self.rhs = self.rhs_const_p()[:-1]
+        self.jac = self.jacKinetic()       
         #eigensystem
-        evals,Revec,Levec = eigsys(kineticjac)
-        f = np.matmul(Levec,self.rhs_const_p()[1:self.nv])
+        evals,Revec,Levec = eigsys(self.jac)
+        f = np.matmul(Levec,self.rhs)
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         return[evals,Revec,Levec,f]
     
     
     def kernel_constrained_jac(self):
-        """Computes constrained (to enthalpy) kernel. Its dimension is Nspecies - 1.
+        """Computes constrained (to enthalpy) kernel. Its dimension is Nspecies .
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
+        self.rhs = self.rhs_const_p()[:-1]
         kineticjac = self.jacKinetic()  
         thermaljac = self.jacThermal()   
-        jac = kineticjac - thermaljac
+        self.jac = kineticjac - thermaljac
         #eigensystem
-        evals,Revec,Levec = eigsys(jac)
-        f = np.matmul(Levec,self.rhs_const_p()[1:self.nv])
+        evals,Revec,Levec = eigsys(self.jac)
+        f = np.matmul(Levec,self.rhs)
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         return[evals,Revec,Levec,f]
@@ -305,13 +286,13 @@ class CanteraCSP(CanteraThermoKinetics):
     
 """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
 """
-def findM(n_elements,stateTY,evals,Revec,tau,f,rtol,atol):
+def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     nv = len(Revec)
-    nEl = n_elements - 1   #-1 accounts for removed inert in jacobian calc
+    nEl = n_elements 
     #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
     imPart = evals.imag!=0
     nModes = nv - nEl
-    ewt = setEwt(stateTY,rtol,atol)
+    ewt = setEwt(stateYT,rtol,atol)
     
     delw = np.zeros(nv)
     for j in range(nModes-1):          #loop over eligible modes (last excluded)
@@ -354,7 +335,7 @@ def modeContribution(a,f,tau,lam):
     
 def findTSR(n_elements,rhs,evals,Revec,f,M):
     n = len(Revec)
-    nEl = n_elements - 1  #-1 accounts for removed inert in jacobian calc
+    nEl = n_elements 
     #deal with amplitudes of cmplx conjugates
     fvec = f.copy()
     imPart = evals.imag!=0
@@ -446,10 +427,6 @@ def timescales(evals):
 
 
 
-
-
-
-
 """ ~~~~~~~~~~~~ INDEXES FUNC ~~~~~~~~~~~~~
 """
 
@@ -485,16 +462,16 @@ def CSP_pointers(A,B):
     pointers = np.array([[np.transpose(A)[spec,mode]*B[mode,spec] for spec in range(nv)] for mode in range(nv)])            
     return pointers
 
-def classify_species(stateTY, rhs, pointers, M):
-    n = len(stateTY)
+def classify_species(stateYT, rhs, pointers, M):
+    n = len(stateYT)
     ytol = 1e-20
     rhstol = 1e-13
     sort = np.absolute(np.sum(pointers[:,:M],axis=1)).argsort()[::-1]
     species_type = np.full(n,'slow',dtype=object)
     species_type[sort[0:M]] = 'fast'
-    species_type[0] = 'slow'  #temperature is always slow
+    species_type[-1] = 'slow'  #temperature is always slow
     for i in range(1,n):
-        if (stateTY[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace' 
+        if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace' 
     return species_type
         
 def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):

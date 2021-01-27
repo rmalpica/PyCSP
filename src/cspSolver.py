@@ -21,26 +21,26 @@ class CSPsolver:
         self.dt = 1e+10
         self.csprtol = 1e-2
         self.cspatol = 1e-8
-        self.jacobiantype = 'analytic'
+        self.jacobiantype = 'full'
         self.M = 0
         self.factor = 0.2
     
     def CSPcore(self,y):
-        self.gas.set_stateTY(y)
+        self.gas.set_stateYT(y)
         lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
         M = self.gas.calc_exhausted_modes(rtol=self.csprtol, atol=self.cspatol)
         tau = cspF.timescales(lam)
         return [A,B,f,lam,tau,M]
     
     def CSPcoreBasic(self,y):
-        self.gas.set_stateTY(y)
+        self.gas.set_stateYT(y)
         lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
         return [A,B,f,lam]
     
     def rhs(self,y):
-        self.gas.set_stateTY(y)
-        dydt = np.zeros(self.gas.nv+1) #adding last term (zero) corresponding to inert species
-        dydt[:self.gas.nv] = self.gas.rhs
+        self.gas.set_stateYT(y)
+        dydt = np.zeros(self.gas.nv) 
+        dydt = self.gas.rhs.copy()
         return dydt
         
     def set_integrator(self,**kwargs):
@@ -99,20 +99,18 @@ class CSPsolver:
     
 def QsMatrix(A,B,M):
     ns = A.shape[0]
-    Qs = np.zeros((ns+1,ns+1))
     if(M > 0):
         QsMat = np.identity(ns) - sum( [np.outer(A[i],B[i]) for i in range(M)])
     else:
         QsMat = np.identity(ns)
-    Qs[:ns,:ns]=QsMat
-    return Qs
+    return QsMat
 
 def RCorr(A,f,lam,M):
     ns = A.shape[0]
-    Rc = np.zeros((ns+1))
+    Rc = np.zeros((ns))
     if(M > 0):
         lamMat = np.diag(lam[0:M])
-        Rc[0:ns] = np.matmul(np.matmul(np.transpose(A[0:M]), np.linalg.inv(lamMat.real)), f[0:M])
+        Rc = np.matmul(np.matmul(np.transpose(A[0:M]), np.linalg.inv(lamMat.real)), f[0:M])
     return Rc
 
 def smart_timescale(tau,factor,M,lamM,dtold):
