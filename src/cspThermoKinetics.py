@@ -103,7 +103,7 @@ class CanteraThermoKinetics(ct.Solution):
         sro = np.sqrt(roundoff)
         #setup the state vector
         T = self.T
-        y = self.Y   #ns-long
+        y = self.Y.copy()   #ns-long
         ydot = self.rhs_const_p()   #ns-long (T,Y1,...,Yn-1)
         
         #create a jacobian vector
@@ -195,6 +195,29 @@ class CanteraThermoKinetics(ct.Solution):
         #np.allclose(jac,jacn,rtol=1e-8,atol=1e-12)
         
         return JacK
+    
+    
+    
+    """ ~~~~~~~~~~~~ OTHER JAC FORMULATIONS ~~~~~~~~~~~~~
+    """
+
+    def jacThermal(self):
+        nv = self.nv
+        R = ct.gas_constant
+        hspec = self.standard_enthalpies_RT
+        Hspec = hspec * R * self.T
+        Wk = self.molecular_weights
+        cp = self.cp_mass
+        TJrow = Hspec[:-1] / ( Wk[:-1] * cp)
+        TJcol = self.jac = self.jac_numeric()[1:nv,0]
+        JacThermal = np.outer(TJcol,TJrow)
+        return JacThermal
+    
+    def jacKinetic(self):
+        nv = self.nv
+        jacKinetic = self.jac = self.jac_numeric()[1:nv,1:nv] 
+        return jacKinetic
+
 
     """ ~~~~~~~~~~~~ REAC NAMES ~~~~~~~~~~~~~
     """     

@@ -51,11 +51,11 @@ while sim.time < 1.5e-3:
     Smat = gas.generalized_Stoich_matrix()
     rvec = gas.R_vector()
     splitrhs = np.dot(Smat,rvec)
-    checksplitrhs = np.isclose(gas.rhs_const_p(), splitrhs[:-1], rtol=1e-6, atol=0, equal_nan=False)
+    checksplitrhs = np.isclose(gas.rhs_const_p(), splitrhs, rtol=1e-6, atol=0, equal_nan=False)
     if(np.any(checkrhs == False)):
         idx = np.array([*range(len(rhs))]) 
         print('Mismatch between numerical RHS and S.r')
-        print(varnames[~checkrhs],gas.rhs_const_p()[~checkrhs],splitrhs[:-1][~checkrhs])
+        print(varnames[~checkrhs],gas.rhs_const_p()[~checkrhs],splitrhs[~checkrhs])
     RHS.append(rhs)
     splitRHS.append(splitrhs)
 
