@@ -3,7 +3,7 @@
 """
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-
+import sys
 import numpy as np
 import cantera as ct
 
@@ -11,13 +11,83 @@ import cantera as ct
 class CanteraThermoKinetics(ct.Solution):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
+        self.problemtype = None
+        self.thermoP = 0.0
+        self.thermoRho = 0.0
 
 
+    """ ~~~~~~~~~~~~ PROBLEM TYPE ~~~~~~~~~~~~~
+    """
+    
+    def set_problemtype(self,problemtype, value):
+        self.problemtype = problemtype
+        if (self.problemtype == 'const_p'):
+            self.thermoP = value
+        elif (self.problemtype == 'const_v'):
+            self.thermoRho = value
+        else:
+            print("Invalid problem type")
+            sys.exit()
+    
+    def set_stateYT(self,y):
+        if (self.problemtype == 'const_p'):
+            return self.set_stateYT_const_p(y)
+        elif (self.problemtype == 'const_v'):
+            return self.set_stateYT_const_v(y)
+        else:
+            print("Invalid problem type")
+            sys.exit()
+            
+    def RHS(self):
+        if (self.problemtype == 'const_p'):
+            return self.rhs_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.rhs_const_v()
+        else:
+            print("Invalid problem type")
+            sys.exit()
+    
+    def jacobian(self):
+        if (self.problemtype == 'const_p'):
+            return self.jacobian_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.jacobian_const_v()
+        else:
+            print("Invalid problem type")
+            sys.exit()
+                        
+    def generalized_Stoich_matrix(self):
+        if (self.problemtype == 'const_p'):
+            return self.generalized_Stoich_matrix_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.generalized_Stoich_matrix_const_v()
+        else:
+            print("Invalid problem type")
+            sys.exit()     
+            
+        
+    
+    """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
+    """
+    def stateYT(self):
+        y = np.zeros(self.n_species+1)
+        y[-1] = self.T
+        y[0:-1] = self.Y
+        return y
 
+        
+    def set_stateYT_const_p(self,y):
+        self.Y = y[0:-1]
+        self.TP = y[-1],self.thermoP
+
+    def set_stateYT_const_v(self,y):
+        self.Y = y[0:-1]
+        self.TD = y[-1],self.thermoRho            
+            
     """ ~~~~~~~~~~~~ RHS ~~~~~~~~~~~~~
     """
     def rhs_const_p(self):
-        """Computes chemical RHS [shape:(ns+1)]. 
+        """Computes chemical RHS [shape:(ns+1)] for a constant pressure reactor. 
         Input must be an instance of the CSPCantera class"""
         
         ns = self.n_species    
@@ -25,20 +95,39 @@ class CanteraThermoKinetics(ct.Solution):
         Wk = self.molecular_weights
         R = ct.gas_constant
         
-        wdot = self.net_production_rates
+        wdot = self.net_production_rates    #[kmol/m^3/s]
         orho = 1./self.density
         
-        ##ydot[0] = - R * self.T * np.dot(self.standard_enthalpies_RT, wdot) * orho / self.cp_mass
-        ##ydot[1:] = wdot * Wk * orho
         ydot[-1] = - R * self.T * np.dot(self.standard_enthalpies_RT, wdot) * orho / self.cp_mass
         ydot[0:-1] = wdot * Wk * orho
         return ydot
     
     
-    """ ~~~~~~~~~~~~ Stoichiometric matrix ~~~~~~~~~~~~~
+    def rhs_const_v(self):
+        """Computes chemical RHS [shape:(ns+1)] for a constant volume reactor. 
+        Input must be an instance of the CSPCantera class"""
+        
+        ns = self.n_species    
+        ydot = np.zeros(ns+1)
+        Wk = self.molecular_weights
+        R = ct.gas_constant
+        
+        wdot = self.net_production_rates    #[kmol/m^3/s]
+        orho = 1./self.density
+        cp = self.cp_mass
+        cv = self.cv_mass
+        wmix = self.mean_molecular_weight
+        
+        gamma = cp / cv
+        
+        ydot[-1] = - R * self.T * np.dot(self.standard_enthalpies_RT, wdot) * gamma * orho / cp + ( (gamma - 1.0) * self.T * wmix * np.sum(wdot) * orho )
+        ydot[0:-1] = wdot * Wk * orho
+        return ydot
+    
+    """ ~~~~~~~~~~~~ Stoichiometric matrix  and R vector ~~~~~~~~~~~~~
     """
     
-    def generalized_Stoich_matrix(self):
+    def generalized_Stoich_matrix_const_p(self):
         """N_s+1 x 2*N_r matrix containing the S components in column major format, 
         such that S dot Rvec yields RHS"""
         nu_p = self.product_stoich_coeffs()
@@ -46,15 +135,43 @@ class CanteraThermoKinetics(ct.Solution):
         rho = self.density
         numat = np.concatenate((nu_p-nu_r,nu_r-nu_p),axis=1)
         smat = np.vstack([numat[i] * self.molecular_weights[i] for i in range(self.n_species)])/rho
-        #compute first row (temperature) of the matrix
+        #compute last row (temperature) of the matrix
         cp = self.cp_mass #[J/Kg K]
         hspec = self.standard_enthalpies_RT  #non-dimensional
         Hspec = ct.gas_constant * self.T * hspec #[J/Kmol]
         smatT = np.sum([- numat[i] * Hspec[i] for i in range(self.n_species)],axis=0)/(rho*cp)
-        ##Smat = np.vstack((smatT,smat))
         Smat = np.vstack((smat,smatT))
         return Smat[:self.nv]
+    
+
+    def generalized_Stoich_matrix_const_v(self):
+        """N_s+1 x 2*N_r matrix containing the S components in column major format, 
+        such that S dot Rvec yields RHS"""
+        Wk = self.molecular_weights
+        R = ct.gas_constant
+        cp = self.cp_mass
+        cv = self.cv_mass
+        #wmix = 1.0/(np.dot(self.Y, np.reciprocal(Wk)))
+        wmix = self.mean_molecular_weight
+        gamma = cp / cv
         
+        nu_p = self.product_stoich_coeffs()
+        nu_r = self.reactant_stoich_coeffs()
+        rho = self.density
+        
+        c1g = gamma/(rho*cp)
+        c2g = (gamma-1.0)*self.T*wmix/rho
+        
+        numat = np.concatenate((nu_p-nu_r,nu_r-nu_p),axis=1)
+        smat = np.vstack([numat[i] * Wk[i] for i in range(self.n_species)])/rho
+        #compute last row (temperature) of the matrix
+        cp = self.cp_mass #[J/Kg K]
+        hspec = self.standard_enthalpies_RT  #non-dimensional
+        Hspec = R * self.T * hspec #[J/Kmol]
+        smatT = np.sum([numat[i] * (-Hspec[i] * c1g + c2g) for i in range(self.n_species)],axis=0)
+        Smat = np.vstack((smat,smatT))
+        return Smat[:self.nv]
+    
     def R_vector(self):
         """ 2*Nr-long vector containing the rates of progress in [Kmol/m3/s]"""        
         rvec = np.concatenate((self.forward_rates_of_progress,self.reverse_rates_of_progress))
@@ -63,13 +180,14 @@ class CanteraThermoKinetics(ct.Solution):
     """ ~~~~~~~~~~~~ JACOBIAN ~~~~~~~~~~~~~
     """
 
-    def jacobian(self):
+    def jacobian_const_p(self):
         """Computes numerical Jacobian.
         Returns a N_s+1 x N_s+1 array [jac]. Input must be an instance of the CSPCantera class"""
         roundoff = np.finfo(float).eps
         sro = np.sqrt(roundoff)
         #setup the state vector
         T = self.T
+        p = self.P
         y = self.Y.copy()   #ns-long
         ydot = self.rhs_const_p()   #ns-long (T,Y1,...,Yn-1)
         
@@ -83,7 +201,6 @@ class CanteraThermoKinetics(ct.Solution):
             self.set_unnormalized_mass_fractions(y+dy)
             ydotp = self.rhs_const_p()
             dydot = ydotp-ydot
-            #jac2D[:,i+1] = dydot/dy[i]
             jac2D[:,i] = dydot/dy[i]
         
         self.Y = y
@@ -92,14 +209,51 @@ class CanteraThermoKinetics(ct.Solution):
         self.TP = T+dT,self.P
         ydotp = self.rhs_const_p()
         dydot = ydotp-ydot
-        #jac2D[:,0] = dydot/dT
         jac2D[:,-1] = dydot/dT
         
-        self.TP = T,self.P
+        self.TP = T,p
            
         return jac2D
 
 
+
+    def jacobian_const_v(self):
+        """Computes numerical Jacobian.
+        Returns a N_s+1 x N_s+1 array [jac]. Input must be an instance of the CSPCantera class"""
+        roundoff = np.finfo(float).eps
+        sro = np.sqrt(roundoff)
+        #setup the state vector
+        T = self.T
+        rho = self.density
+        y = self.Y.copy()   #ns-long
+        ydot = self.rhs_const_v()   #ns-long (T,Y1,...,Yn-1)
+        
+        #create a jacobian vector
+        jac2D = np.zeros((self.n_species+1, self.n_species+1))
+        
+        #evaluate the Jacobian
+        for i in range(self.n_species):
+            dy = np.zeros(self.n_species)
+            dy[i] = max(sro*abs(y[i]),1e-8)
+            self.set_unnormalized_mass_fractions(y+dy)
+            ydotp = self.rhs_const_v()
+            dydot = ydotp-ydot
+            jac2D[:,i] = dydot/dy[i]
+        
+        self.Y = y
+
+        dT = max(sro*abs(T),1e-3)
+        self.TD = T+dT,rho
+        ydotp = self.rhs_const_v()
+        dydot = ydotp-ydot
+        jac2D[:,-1] = dydot/dT
+        
+        self.TD = T,rho
+           
+        return jac2D
+    
+    
+    
     def jac_contribution(self):
         """Computes contributions of each reaction to numerical Jacobian.
         Given that g = Sr = Sum_k S_k r^k, it follows that      

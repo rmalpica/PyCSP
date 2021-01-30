@@ -13,7 +13,6 @@ import src.cspFunctions as cspF
 class CSPsolver:
     def __init__(self, gas):   
         self.gas = gas
-        self.P = gas.P
         self.y = []
         self.t = []
         self.Qs = []
@@ -40,7 +39,7 @@ class CSPsolver:
     def rhs(self,y):
         self.gas.set_stateYT(y)
         dydt = np.zeros(self.gas.nv) 
-        dydt = self.gas.rhs.copy()
+        dydt = self.gas.RHS()
         return dydt
         
     def set_integrator(self,**kwargs):

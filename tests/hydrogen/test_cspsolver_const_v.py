@@ -14,13 +14,16 @@ import time
 #create gas from original mechanism file hydrogen.cti
 gas = cspF.CanteraCSP('hydrogen.cti')
 
-
 #set the gas state
 T = 1000
 P = ct.one_atm
 #gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
+
+rho = gas.density
+gas.set_problemtype('const_v', rho)
+
 
 y0 = np.hstack((gas.Y,gas.T))
 t0 = 0.0
@@ -38,8 +41,9 @@ starttimecsp = time.time()
 while solver.t < t_end:
     solver.integrate()
     states.append(gas.state, t=solver.t, M=solver.M)
-    #print('%10.3e %10.3f %10.3e %2i' % (solver.t, solver.y[0], solver.dt, solver.M))
+    #print('%10.3e %10.3f %10.3e %10.3e %10.3e %2i' % (solver.t, solver.y[-1], solver.dt, gas.P, gas.density, solver.M))
 endtimecsp = time.time()
+
 
 #reset the gas state
 T = 1000
@@ -49,7 +53,7 @@ gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 
 #integrate ODE with CVODE
-r = ct.IdealGasConstPressureReactor(gas)
+r = ct.IdealGasReactor(gas)
 sim = ct.ReactorNet([r])
 
 statesCV = ct.SolutionArray(gas, extra=['t'])
@@ -70,25 +74,35 @@ print('CVODE elapsed time [s]:      %10.3e, # of steps taken: %5i' % (elapsedCV,
 #plot solution
 print('plotting ODE solution...')
 plt.clf()
-plt.subplot(2, 2, 1)
+plt.subplot(2, 3, 1)
 plt.plot(states.t, states.T,statesCV.t, statesCV.T)
 plt.xlabel('Time (s)')
 plt.ylabel('Temperature (K)')
 plt.xlim(0., 0.002)
-plt.subplot(2, 2, 2)
+plt.subplot(2, 3, 2)
 plt.plot(states.t, states.X[:,gas.species_index('OH')],statesCV.t, statesCV.X[:,gas.species_index('OH')])
 plt.xlabel('Time (s)')
 plt.ylabel('OH Mole Fraction')
 plt.xlim(0., 0.002)
-plt.subplot(2, 2, 3)
+plt.subplot(2, 3, 3)
 plt.plot(states.t, states.X[:,gas.species_index('H')],statesCV.t, statesCV.X[:,gas.species_index('H')])
 plt.xlabel('Time (s)')
 plt.ylabel('H Mole Fraction')
 plt.xlim(0., 0.002)
-plt.subplot(2, 2, 4)
+plt.subplot(2, 3, 4)
 plt.plot(states.t, states.M)
 plt.xlabel('Time (s)')
 plt.ylabel('Exhausted modes')
+plt.xlim(0., 0.002)
+plt.subplot(2, 3, 5)
+plt.plot(states.t, states.density,statesCV.t, statesCV.density)
+plt.xlabel('Time (s)')
+plt.ylabel('density')
+plt.xlim(0., 0.002)
+plt.subplot(2, 3, 6)
+plt.plot(states.t, states.P,statesCV.t, statesCV.P)
+plt.xlabel('Time (s)')
+plt.ylabel('Pressure')
 plt.xlim(0., 0.002)
 plt.tight_layout()
 plt.show()

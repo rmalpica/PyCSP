@@ -13,6 +13,7 @@ import src.utils as utils
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
 
+gas.set_problemtype('const_p')
 
 #set the gas state
 T = 1000

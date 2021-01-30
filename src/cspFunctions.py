@@ -35,8 +35,6 @@ class CanteraCSP(CanteraThermoKinetics):
 
                 
     def update_kernel(self, jacobiantype):
-        """Computes the CSP kernel"""
-        jacobiantype = self.jacobiantype
         if jacobiantype == 'full':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
         elif jacobiantype == 'constrained':
@@ -209,22 +207,7 @@ class CanteraCSP(CanteraThermoKinetics):
         else:
             return [API, TPI, Ifast, Islow, species_type]
         
-        
-    
-        """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
-        """
-    def stateYT(self):
-        y = np.zeros(self.n_species+1)
-        ##y[0] = self.T
-        ##y[1:] = self.Y
-        y[-1] = self.T
-        y[0:-1] = self.Y
-        return y
-    
-    
-    def set_stateYT(self,y):
-        self.Y = y[0:-1]
-        self.TP = y[-1],self.P
+
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
@@ -237,7 +220,7 @@ class CanteraCSP(CanteraThermoKinetics):
     
         self.nv = self.n_species + 1     
         
-        self.rhs = self.rhs_const_p()
+        self.rhs = self.RHS()
         
         self.jac = self.jacobian()
         
@@ -256,7 +239,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
-        self.rhs = self.rhs_const_p()[:-1]
+        self.rhs = self.RHS()[:-1]
         self.jac = self.jacKinetic()       
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
@@ -271,7 +254,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
-        self.rhs = self.rhs_const_p()[:-1]
+        self.rhs = self.RHS()[:-1]
         kineticjac = self.jacKinetic()  
         thermaljac = self.jacThermal()   
         self.jac = kineticjac - thermaljac
