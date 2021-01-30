@@ -12,7 +12,6 @@ import src.cspFunctions as csp
 #create gas from original mechanism file hydrogen.cti
 gas = csp.CanteraCSP('hydrogen.cti')
 
-gas.set_problemtype('const_p')
 
 #set the gas state
 T = 1000
@@ -20,6 +19,7 @@ P = ct.one_atm
 #gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
+gas.set_problemtype('const_p',P)
 
 #equilibrium
 #gas.equilibrate('HP')
