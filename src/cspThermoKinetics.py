@@ -351,6 +351,6 @@ class CanteraThermoKinetics(ct.Solution):
         nr = self.n_reactions
         rnames = self.reaction_equations()
         reacnames = np.zeros(2*nr,dtype=object)
-        reacnames[0:nr] = [s + ' (Fwd)' for s in rnames]
-        reacnames[nr:2*nr] = [s + ' (Bwd)' for s in rnames]
+        reacnames[0:nr] = ['(Rf-'+str(i+1)+') '+ s for s,i in zip(rnames,range(nr)) ]
+        reacnames[nr:2*nr] = ['(Rb-'+str(i+1)+') '+ s for s,i in zip(rnames,range(nr))]
         return reacnames

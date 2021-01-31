@@ -19,10 +19,10 @@ P = ct.one_atm
 #gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
+
+#push pressure
 gas.set_problemtype('const_p',P)
 
-#equilibrium
-#gas.equilibrate('HP')
 
 #integrate ODE
 r = ct.IdealGasConstPressureReactor(gas)

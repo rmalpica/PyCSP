@@ -14,8 +14,6 @@ import time
 #create gas from original mechanism file hydrogen.cti
 gas = cspF.CanteraCSP('hydrogen.cti')
 
-
-
 #set the gas state
 T = 1000
 P = ct.one_atm
@@ -24,6 +22,7 @@ gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 gas.set_problemtype('const_p', P)
 
+#set initial condition
 y0 = np.hstack((gas.Y,gas.T))
 t0 = 0.0
 
@@ -31,7 +30,7 @@ t_end = 1e-2
 
 #integrate ODE with CSP solver
 solver = cspS.CSPsolver(gas)
-solver.set_integrator(cspRtol=1e-4,cspAtol=1e-9,factor=0.2,jacobiantype='full')
+solver.set_integrator(cspRtol=1e-2,cspAtol=1e-8,factor=0.2,jacobiantype='full')
 solver.set_initial_value(y0,t0)
 
 states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'M': 0})
