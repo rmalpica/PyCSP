@@ -16,3 +16,5 @@ Several examples are available in the Examples folder to test the functionalitie
 - exhausted modes (M) 
 - tangential stretching rate (TSR)
 - CSP and TSR indices (importance indices, amplitude and timescale participatio indices, TSR amplitude/timescale participation indices)
+
+Cantera chem-input files are required. Cantera offers a utility to convert chemkin-format files into cantera-format: https://cantera.org/tutorials/ck2cti-tutorial.html
