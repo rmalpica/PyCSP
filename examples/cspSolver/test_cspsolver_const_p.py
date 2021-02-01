@@ -6,9 +6,8 @@ import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-sys.path.insert(0,'../..')
-import src.cspFunctions as cspF
-import src.cspSolver as cspS
+import PyCSP.Functions as cspF
+import PyCSP.Solver as cspS
 import time
 
 #create gas from original mechanism file hydrogen.cti

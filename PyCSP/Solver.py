@@ -7,7 +7,7 @@ Created on Tue Jan  5 12:26:32 2021
 """
 import sys
 import numpy as np
-import src.cspFunctions as cspF
+import PyCSP.Functions as cspF
 
 
 class CSPsolver:
