@@ -5,7 +5,7 @@
 """
 import sys
 import numpy as np
-from .cspThermoKinetics import CanteraThermoKinetics
+from .ThermoKinetics import CanteraThermoKinetics
 
 
 class CanteraCSP(CanteraThermoKinetics):

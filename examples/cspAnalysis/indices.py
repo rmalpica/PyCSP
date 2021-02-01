@@ -7,8 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import sys
-sys.path.insert(0,'../..')
-import src.cspFunctions as csp
+import PyCSP.Functions as csp
 
 
 #create gas from original mechanism file hydrogen.cti
