@@ -22,7 +22,7 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 
 #push density
 rho = gas.density
-gas.set_problemtype('const_v', rho)
+gas.constRho = rho
 
 #nitial condition
 y0 = np.hstack((gas.Y,gas.T))

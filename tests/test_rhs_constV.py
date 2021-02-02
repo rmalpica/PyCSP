@@ -20,7 +20,7 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 
 #push density
 rho = gas.density
-gas.set_problemtype('const_v',rho)
+gas.constRho = rho
 
 
 #integrate ODE
@@ -37,9 +37,9 @@ while sim.time < 1.e-3:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.density, r.thermo.u))
-    rhs = gas.rhs_const_v()
-    Smat = gas.generalized_Stoich_matrix_const_v()
-    rvec = gas.R_vector()
+    rhs = gas.RHS
+    Smat = gas.generalized_Stoich_matrix
+    rvec = gas.R_vector
     splitrhs = np.dot(Smat,rvec)
     checksplitrhs = np.isclose(rhs, splitrhs, rtol=1e-6, atol=1e-6, equal_nan=False)
     if(np.any(checksplitrhs == False)):
@@ -91,4 +91,3 @@ ax.set_xlim([0., 0.001])
 ax.grid(False)
 ax.legend()
 plt.show()
-#plt.savefig('figures/prediction_combined.png', dpi=500, transparent=False)
