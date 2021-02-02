@@ -30,7 +30,7 @@ class CanteraThermoKinetics(ct.Solution):
     @property
     def constP(self):
         if(self.problemtype != 'const_p'):
-            raise TypeError("Problemtype is constant density. Constant pressure is unset")
+            raise ValueError("Problemtype is constant density. Constant pressure is unset")
         else:
             return self._constP
           
@@ -40,12 +40,12 @@ class CanteraThermoKinetics(ct.Solution):
             self._constP = value
             self._problemtype = 'const_p'
         else:
-            raise TypeError("Pressure must be positive")
+            raise ValueError("Pressure must be positive")
 
     @property
     def constRho(self):
         if(self.problemtype != 'const_v'):
-            raise TypeError("Problemtype is constant pressure. Constant density is unset")
+            raise ValueError("Problemtype is constant pressure. Constant density is unset")
         else:
             return self._constRho
           
@@ -55,7 +55,7 @@ class CanteraThermoKinetics(ct.Solution):
             self._constRho = value
             self._problemtype = 'const_v'
         else:
-            raise TypeError("Density must be positive")
+            raise ValueError("Density must be positive")
     
     @property
     def nv(self):
