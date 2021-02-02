@@ -53,8 +53,6 @@ Y =  data[:,3:]
 
 gas = csp.CanteraCSP('hydrogen.cti')
 
-gas.set_problemtype('const_p',P)
-
 evals = []
 Revec = []
 Levec = []
