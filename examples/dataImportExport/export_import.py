@@ -20,7 +20,7 @@ P = ct.one_atm
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 #push pressure
-gas.set_problemtype('const_p',P)
+gas.constP = P
 
 
 #integrate ODE and dump test data
@@ -60,7 +60,7 @@ fvec = []
 M = []
 
 for step in range(time.shape[0]):
-    gas.set_problemtype('const_p',Pressure[step])
+    gas.constP = Pressure[step]
     state = np.append(Y[step],Temp[step])
     gas.set_stateYT(state)
     lam,R,L,f = gas.get_kernel(jacobiantype='full')

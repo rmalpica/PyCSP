@@ -11,7 +11,6 @@ from .ThermoKinetics import CanteraThermoKinetics
 class CanteraCSP(CanteraThermoKinetics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
-        self.nv = self.n_species + 1 
         self.jacobiantype = 'full'
         self.rtol = 1.0e-2
         self.atol = 1.0e-8
@@ -33,7 +32,7 @@ class CanteraCSP(CanteraThermoKinetics):
     def is_changed(self):
         return self._changed
 
-                
+            
     def update_kernel(self, jacobiantype):
         if jacobiantype == 'full':
             self.evals,self.Revec,self.Levec,self.f = self.kernel()
@@ -139,8 +138,8 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
-        Smat = self.generalized_Stoich_matrix()
-        rvec = self.R_vector()
+        Smat = self.generalized_Stoich_matrix
+        rvec = self.R_vector
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         TSRidx = TSRindices(weights, self.evals)
@@ -192,8 +191,8 @@ class CanteraCSP(CanteraThermoKinetics):
             self.update_kernel(self.jacobiantype)
             self._changed = False
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
-        Smat = self.generalized_Stoich_matrix()
-        rvec = self.R_vector()
+        Smat = self.generalized_Stoich_matrix
+        rvec = self.R_vector
         if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
         if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec,self.Levec,M,Smat,rvec)
         if getspeciestype: 
@@ -220,9 +219,9 @@ class CanteraCSP(CanteraThermoKinetics):
     
         self.nv = self.n_species + 1     
         
-        self.rhs = self.RHS()
+        self.rhs = self.RHS.copy()
         
-        self.jac = self.jacobian()
+        self.jac = self.jacobian.copy()
         
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
@@ -239,7 +238,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
-        self.rhs = self.RHS()[:-1]
+        self.rhs = self.RHS[:-1].copy()
         self.jac = self.jacKinetic()       
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
@@ -254,7 +253,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
         self.nv = self.n_species
-        self.rhs = self.RHS()[:-1]
+        self.rhs = self.RHS[:-1].copy()
         kineticjac = self.jacKinetic()  
         thermaljac = self.jacThermal()   
         self.jac = kineticjac - thermaljac

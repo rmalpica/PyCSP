@@ -3,7 +3,6 @@
 """
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-import sys
 import numpy as np
 import cantera as ct
 
@@ -11,64 +10,101 @@ import cantera as ct
 class CanteraThermoKinetics(ct.Solution):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
-        self.problemtype = None
-        self.thermoP = 0.0
-        self.thermoRho = 0.0
+        self._problemtype = 'const_p'
+        self.constP = 0.1
+        self.constRho = 0.1
+        self._nv = self.n_species + 1
+        self._RHS = []
+        self._jacobian = []
+        self._generalized_Stoich_matrix = []
+        self._R_vector = []
 
 
-    """ ~~~~~~~~~~~~ PROBLEM TYPE ~~~~~~~~~~~~~
+    """ ~~~~~~~~~~~~ PROPERTIES ~~~~~~~~~~~~~
     """
+    @property
+    def problemtype(self):
+        return self._problemtype
+
     
-    def set_problemtype(self,problemtype, value):
-        self.problemtype = problemtype
-        if (self.problemtype == 'const_p'):
-            self.thermoP = value
-        elif (self.problemtype == 'const_v'):
-            self.thermoRho = value
+    @property
+    def constP(self):
+        if(self.problemtype != 'const_p'):
+            raise TypeError("Problemtype is constant density. Constant pressure is unset")
         else:
-            print("Invalid problem type")
-            sys.exit()
+            return self._constP
+          
+    @constP.setter
+    def constP(self,value):
+        if value > 0:
+            self._constP = value
+            self._problemtype = 'const_p'
+        else:
+            raise TypeError("Pressure must be positive")
+
+    @property
+    def constRho(self):
+        if(self.problemtype != 'const_v'):
+            raise TypeError("Problemtype is constant pressure. Constant density is unset")
+        else:
+            return self._constRho
+          
+    @constRho.setter
+    def constRho(self,value):
+        if value > 0:
+            self._constRho = value
+            self._problemtype = 'const_v'
+        else:
+            raise TypeError("Density must be positive")
+    
+    @property
+    def nv(self):
+        return self._nv
+    
+    @nv.setter
+    def nv(self,value):
+        self._nv = value
+       
+    @property
+    def RHS(self):
+        if (self.problemtype == 'const_p'):        
+            return self.rhs_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.rhs_const_v()
+
+
+    @property
+    def jacobian(self):
+        if (self.problemtype == 'const_p'):
+            return self.jacobian_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.jacobian_const_v()
+
+    @property                    
+    def generalized_Stoich_matrix(self):
+        if (self.problemtype == 'const_p'):
+            return self.generalized_Stoich_matrix_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.generalized_Stoich_matrix_const_v()
+              
+    @property                    
+    def R_vector(self):
+        return self.Rates_vector()
+
+    """ ~~~~~~~~~~~~ METHODS ~~~~~~~~~~~~~
+    """
+
+    
+    """ ~~~~~~~~~~~~ state ~~~~~~~~~~~~~
+    """
     
     def set_stateYT(self,y):
         if (self.problemtype == 'const_p'):
             return self.set_stateYT_const_p(y)
         elif (self.problemtype == 'const_v'):
             return self.set_stateYT_const_v(y)
-        else:
-            print("Invalid problem type")
-            sys.exit()
-            
-    def RHS(self):
-        if (self.problemtype == 'const_p'):
-            return self.rhs_const_p()
-        elif (self.problemtype == 'const_v'):
-            return self.rhs_const_v()
-        else:
-            print("Invalid problem type")
-            sys.exit()
-    
-    def jacobian(self):
-        if (self.problemtype == 'const_p'):
-            return self.jacobian_const_p()
-        elif (self.problemtype == 'const_v'):
-            return self.jacobian_const_v()
-        else:
-            print("Invalid problem type")
-            sys.exit()
-                        
-    def generalized_Stoich_matrix(self):
-        if (self.problemtype == 'const_p'):
-            return self.generalized_Stoich_matrix_const_p()
-        elif (self.problemtype == 'const_v'):
-            return self.generalized_Stoich_matrix_const_v()
-        else:
-            print("Invalid problem type")
-            sys.exit()     
-            
         
     
-    """ ~~~~~~~~~~~~ STATE ~~~~~~~~~~~~~
-    """
     def stateYT(self):
         y = np.zeros(self.n_species+1)
         y[-1] = self.T
@@ -78,13 +114,13 @@ class CanteraThermoKinetics(ct.Solution):
         
     def set_stateYT_const_p(self,y):
         self.Y = y[0:-1]
-        self.TP = y[-1],self.thermoP
+        self.TP = y[-1],self.constP
 
     def set_stateYT_const_v(self,y):
         self.Y = y[0:-1]
-        self.TD = y[-1],self.thermoRho            
+        self.TD = y[-1],self.constRho            
             
-    """ ~~~~~~~~~~~~ RHS ~~~~~~~~~~~~~
+    """ ~~~~~~~~~~~~ rhs ~~~~~~~~~~~~~
     """
     def rhs_const_p(self):
         """Computes chemical RHS [shape:(ns+1)] for a constant pressure reactor. 
@@ -124,7 +160,7 @@ class CanteraThermoKinetics(ct.Solution):
         ydot[0:-1] = wdot * Wk * orho
         return ydot
     
-    """ ~~~~~~~~~~~~ Stoichiometric matrix  and R vector ~~~~~~~~~~~~~
+    """ ~~~~~~~~~~~~ Stoichiometric matrix and Rates vector ~~~~~~~~~~~~~
     """
     
     def generalized_Stoich_matrix_const_p(self):
@@ -170,14 +206,14 @@ class CanteraThermoKinetics(ct.Solution):
         Hspec = R * self.T * hspec #[J/Kmol]
         smatT = np.sum([numat[i] * (-Hspec[i] * c1g + c2g) for i in range(self.n_species)],axis=0)
         Smat = np.vstack((smat,smatT))
-        return Smat[:self.nv]
+        return Smat
     
-    def R_vector(self):
+    def Rates_vector(self):
         """ 2*Nr-long vector containing the rates of progress in [Kmol/m3/s]"""        
         rvec = np.concatenate((self.forward_rates_of_progress,self.reverse_rates_of_progress))
         return rvec
     
-    """ ~~~~~~~~~~~~ JACOBIAN ~~~~~~~~~~~~~
+    """ ~~~~~~~~~~~~ jacobian ~~~~~~~~~~~~~
     """
 
     def jacobian_const_p(self):
@@ -269,8 +305,8 @@ class CanteraThermoKinetics(ct.Solution):
         #setup the state vector
         T = self.T
         y = self.Y   #ns-long
-        Smat = self.generalized_Stoich_matrix()   # ns x 2nr
-        rvec = self.R_vector()    # 2nr-long
+        Smat = self.generalized_Stoich_matrix   # ns x 2nr
+        rvec = self.R_vector    # 2nr-long
 
         
         Smatp = np.zeros((nv,nv,2*nr))
@@ -280,15 +316,15 @@ class CanteraThermoKinetics(ct.Solution):
             dy = np.zeros(ns)
             dy[i] = max(sro*abs(y[i]),1e-8)
             self.set_unnormalized_mass_fractions(y+dy)
-            Smatp[i] = self.generalized_Stoich_matrix()
-            rvecp[i] = self.R_vector()
+            Smatp[i] = self.generalized_Stoich_matrix
+            rvecp[i] = self.R_vector
         
         if(nv==ns+1):            
             self.Y = y  #reset original Y
             dT = max(sro*abs(T),1e-3)
             self.TP = T+dT,self.P
-            Smatp[-1] = self.generalized_Stoich_matrix()
-            rvecp[-1] = self.R_vector()
+            Smatp[-1] = self.generalized_Stoich_matrix
+            rvecp[-1] = self.R_vector
      
             self.TP = T,self.P  #reset original T,P
         
@@ -335,13 +371,13 @@ class CanteraThermoKinetics(ct.Solution):
         Wk = self.molecular_weights
         cp = self.cp_mass
         TJrow = Hspec / ( Wk * cp)
-        TJcol = self.jac = self.jacobian()[0:ns,-1]
+        TJcol = self.jac = self.jacobian[0:ns,-1]
         JacThermal = np.outer(TJcol,TJrow)
         return JacThermal
     
     def jacKinetic(self):
         ns = self.n_species
-        jacKinetic = self.jac = self.jacobian()[0:ns,0:ns] 
+        jacKinetic = self.jac = self.jacobian[0:ns,0:ns] 
         return jacKinetic
 
 
