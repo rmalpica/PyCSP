@@ -3,7 +3,7 @@
 """
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-import sys
+
 import numpy as np
 from .ThermoKinetics import CanteraThermoKinetics
 
@@ -41,8 +41,7 @@ class CanteraCSP(CanteraThermoKinetics):
         elif jacobiantype == 'kinetic':
             self.evals,self.Revec,self.Levec,self.f = self.kernel_kinetic_only()
         else:
-            print("Invalid jacobian keyword")
-            sys.exit()
+            raise ValueError("Invalid jacobian keyword")
         self.tau = timescales(self.evals)
         self._changed = False
  
@@ -56,7 +55,7 @@ class CanteraCSP(CanteraThermoKinetics):
             if (key == 'jacobiantype'): 
                 jacobiantype = value
             else:
-                sys.exit("unknown argument %s" %key)
+                raise ValueError("unknown argument %s" %key)
         if (self.jacobiantype != jacobiantype): self.jacobiantype = jacobiantype
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
@@ -76,7 +75,7 @@ class CanteraCSP(CanteraThermoKinetics):
             elif (key == 'atol'): 
                 atol = value
             else:
-                sys.exit("unknown argument %s" %key)
+                raise ValueError("unknown argument %s" %key)
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
@@ -101,7 +100,7 @@ class CanteraCSP(CanteraThermoKinetics):
             elif (key == 'getM'): 
                 getM = value
             else:
-                sys.exit("unknown argument %s" %key)
+                raise ValueError("unknown argument %s" %key)
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
@@ -132,9 +131,9 @@ class CanteraCSP(CanteraThermoKinetics):
                 if(value == 'timescale'):
                     useTPI = True
                 elif(value != 'amplitude'):
-                    sys.exit("unknown type %s" %value)
+                    raise ValueError("unknown type %s" %value)
             else:
-                sys.exit("unknown argument %s" %key)
+                raise ValueError("unknown argument %s" %key)
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
@@ -186,7 +185,7 @@ class CanteraCSP(CanteraThermoKinetics):
             elif (key == 'TPI'): 
                 getTPI = value
             else:
-                sys.exit("unknown argument %s" %key)
+                raise ValueError("unknown argument %s" %key)
         if self.is_changed(): 
             self.update_kernel(self.jacobiantype)
             self._changed = False
