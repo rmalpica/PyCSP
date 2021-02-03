@@ -21,8 +21,33 @@ class CanteraCSP(CanteraThermoKinetics):
         self._Levec = []
         self._f = []
         self._tau = []
+        self._nUpdates = 0
         self._changed = False
+    
+    @property
+    def jacobiantype(self):
+        return self._jacobiantype
+          
+    @jacobiantype.setter
+    def jacobiantype(self,value):
+        self._jacobiantype = value
 
+    @property
+    def rtol(self):
+        return self._rtol
+          
+    @rtol.setter
+    def rtol(self,value):
+        self._rtol = value
+        
+    @property
+    def atol(self):
+        return self._atol
+          
+    @atol.setter
+    def atol(self,value):
+        self._atol = value
+        
     @property
     def rhs(self):
         return self._rhs
@@ -51,6 +76,9 @@ class CanteraCSP(CanteraThermoKinetics):
     def tau(self):
         return self._tau
     
+    @property
+    def nUpdates(self):
+        return self._nUpdates
     
     def __setattr__(self, key, value):
         if key != '_changed':
@@ -236,15 +264,12 @@ class CanteraCSP(CanteraThermoKinetics):
         Input must be an instance of the CSPCantera class"""
     
         self.nv = self.n_species + 1     
-        
         self._rhs = self.source.copy()
-        
         self._jac = self.jacobian.copy()
-        
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
         f = np.matmul(Levec,self.rhs)
-        
+        self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         
@@ -261,6 +286,7 @@ class CanteraCSP(CanteraThermoKinetics):
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
         f = np.matmul(Levec,self.rhs)
+        self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         return[evals,Revec,Levec,f]
@@ -278,6 +304,7 @@ class CanteraCSP(CanteraThermoKinetics):
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
         f = np.matmul(Levec,self.rhs)
+        self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
         Revec,Levec,f = evec_pos_ampl(Revec,Levec,f)
         return[evals,Revec,Levec,f]
