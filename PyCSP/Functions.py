@@ -30,8 +30,11 @@ class CanteraCSP(CanteraThermoKinetics):
           
     @jacobiantype.setter
     def jacobiantype(self,value):
-        self._jacobiantype = value
-
+        if value == 'full' or value == 'kinetic' or value == 'constrained':
+            self._jacobiantype = value
+        else:
+            raise ValueError("Invalid jacobian type --> %s" %value)
+            
     @property
     def rtol(self):
         return self._rtol
@@ -90,15 +93,13 @@ class CanteraCSP(CanteraThermoKinetics):
         return self._changed
 
             
-    def update_kernel(self, jacobiantype):
-        if jacobiantype == 'full':
+    def update_kernel(self):
+        if self.jacobiantype == 'full':
             self._evals,self._Revec,self._Levec,self._f = self.kernel()
-        elif jacobiantype == 'constrained':
+        elif self.jacobiantype == 'constrained':
             self._evals,self._Revec,self._Levec,self._f = self.kernel_constrained_jac()
-        elif jacobiantype == 'kinetic':
+        elif self.jacobiantype == 'kinetic':
             self._evals,self._Revec,self._Levec,self._f = self.kernel_kinetic_only()
-        else:
-            raise ValueError("Invalid jacobian type --> %s" %jacobiantype)
         self._tau = timescales(self.evals)
         self._changed = False
  
@@ -113,7 +114,7 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
-            self.update_kernel(self.jacobiantype)
+            self.update_kernel()
             self._changed = False
         return [self.evals,self.Revec,self.Levec,self.f]
  
@@ -130,7 +131,7 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
-            self.update_kernel(self.jacobiantype)
+            self.update_kernel()
             self._changed = False
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
         return M
@@ -153,7 +154,7 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
-            self.update_kernel(self.jacobiantype)
+            self.update_kernel()
             self._changed = False
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
@@ -184,7 +185,7 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
-            self.update_kernel(self.jacobiantype)
+            self.update_kernel()
             self._changed = False
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector
@@ -234,7 +235,7 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
-            self.update_kernel(self.jacobiantype)
+            self.update_kernel()
             self._changed = False
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
         Smat = self.generalized_Stoich_matrix
