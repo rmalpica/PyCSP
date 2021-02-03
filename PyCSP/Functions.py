@@ -123,17 +123,19 @@ class CanteraCSP(CanteraThermoKinetics):
         """Computes number of exhausted modes (M). 
         Optional arguments are rtol and atol for the calculation of M.
         If not provided, uses default or previously set values"""
+        rtol = self.rtol
+        atol = self.atol
         for key, value in kwargs.items():
             if (key == 'rtol'):                 
-                if (self.rtol != value): self.rtol = value
+                rtol = value
             elif (key == 'atol'): 
-                if (self.atol != value): self.atol = value
+                atol = value
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
             self.update_kernel()
             self._changed = False
-        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         return M
  
        
@@ -144,11 +146,13 @@ class CanteraCSP(CanteraThermoKinetics):
         The calculated value of M can be retrieved by passing
         the optional argument getM=True"""
         getM = False
+        rtol = self.rtol
+        atol = self.atol
         for key, value in kwargs.items():
             if (key == 'rtol'): 
-                if (self.rtol != value): self.rtol = value
+                rtol = value
             elif (key == 'atol'): 
-                if (self.atol != value): self.atol = value
+                atol = value
             elif (key == 'getM'): 
                 getM = value
             else:
@@ -156,7 +160,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel()
             self._changed = False
-        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         if getM:
             return [TSR, M]
@@ -172,11 +176,13 @@ class CanteraCSP(CanteraThermoKinetics):
         The calculated value of M can be retrieved by passing
         the optional argument getM=True"""
         useTPI = False
+        rtol = self.rtol
+        atol = self.atol
         for key, value in kwargs.items():
             if (key == 'rtol'): 
-                if (self.rtol != value): self.rtol = value
+                rtol = value
             elif (key == 'atol'): 
-                if (self.atol != value): self.atol = value
+                atol = value
             elif (key == 'type'): 
                 if(value == 'timescale'):
                     useTPI = True
@@ -189,7 +195,7 @@ class CanteraCSP(CanteraThermoKinetics):
             self._changed = False
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector
-        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         TSRidx = TSRindices(weights, self.evals)
         if (useTPI):
@@ -217,11 +223,13 @@ class CanteraCSP(CanteraThermoKinetics):
         Islow = None
         species_type = None
         TPI = None
+        rtol = self.rtol
+        atol = self.atol
         for key, value in kwargs.items():
             if (key == 'rtol'): 
-                if (self.rtol != value): self.rtol = value
+                rtol = value
             elif (key == 'atol'): 
-                if (self.atol != value): self.atol = value
+                atol = value
             elif (key == 'getM'): 
                 getM = value
             elif (key == 'API'): 
@@ -237,7 +245,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel()
             self._changed = False
-        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,self.rtol,self.atol)
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector
         if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
