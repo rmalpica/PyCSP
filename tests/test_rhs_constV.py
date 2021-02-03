@@ -37,7 +37,7 @@ while sim.time < 1.e-3:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.density, r.thermo.u))
-    rhs = gas.RHS
+    rhs = gas.source
     Smat = gas.generalized_Stoich_matrix
     rvec = gas.R_vector
     splitrhs = np.dot(Smat,rvec)
