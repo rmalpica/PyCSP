@@ -10,11 +10,12 @@ import cantera as ct
 class CanteraThermoKinetics(ct.Solution):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  
-        self._problemtype = 'const_p'
-        self.constP = 0.1
-        self.constRho = 0.1
+
+        self.constP = 0.0001
+        self.constRho = 0.0001
+        self._problemtype = 'unset'
         self._nv = self.n_species + 1
-        self._RHS = []
+        self._source = []
         self._jacobian = []
         self._generalized_Stoich_matrix = []
         self._R_vector = []
@@ -30,7 +31,7 @@ class CanteraThermoKinetics(ct.Solution):
     @property
     def constP(self):
         if(self.problemtype != 'const_p'):
-            raise ValueError("Problemtype is constant density. Constant pressure is unset")
+            raise ValueError("Constant pressure is unset")
         else:
             return self._constP
           
@@ -45,7 +46,7 @@ class CanteraThermoKinetics(ct.Solution):
     @property
     def constRho(self):
         if(self.problemtype != 'const_v'):
-            raise ValueError("Problemtype is constant pressure. Constant density is unset")
+            raise ValueError("Constant density is unset")
         else:
             return self._constRho
           
@@ -63,14 +64,19 @@ class CanteraThermoKinetics(ct.Solution):
     
     @nv.setter
     def nv(self,value):
-        self._nv = value
+        if self.n_species <= value <= self.n_species+1:
+            self._nv = value
+        else:
+            raise ValueError("Number of variables must be Ns or Ns+1")
        
     @property
-    def RHS(self):
+    def source(self):
         if (self.problemtype == 'const_p'):        
             return self.rhs_const_p()
         elif (self.problemtype == 'const_v'):
             return self.rhs_const_v()
+        else:
+            raise ValueError("Need to set either constP or constRho value")
 
 
     @property
@@ -79,6 +85,8 @@ class CanteraThermoKinetics(ct.Solution):
             return self.jacobian_const_p()
         elif (self.problemtype == 'const_v'):
             return self.jacobian_const_v()
+        else:
+            raise ValueError("Need to set either constP or constRho value")
 
     @property                    
     def generalized_Stoich_matrix(self):
@@ -86,6 +94,8 @@ class CanteraThermoKinetics(ct.Solution):
             return self.generalized_Stoich_matrix_const_p()
         elif (self.problemtype == 'const_v'):
             return self.generalized_Stoich_matrix_const_v()
+        else:
+            raise ValueError("Need to set either constP or constRho value")
               
     @property                    
     def R_vector(self):
@@ -103,7 +113,8 @@ class CanteraThermoKinetics(ct.Solution):
             return self.set_stateYT_const_p(y)
         elif (self.problemtype == 'const_v'):
             return self.set_stateYT_const_v(y)
-        
+        else:
+            raise ValueError("Need to set either constP or constRho value")
     
     def stateYT(self):
         y = np.zeros(self.n_species+1)
@@ -164,7 +175,7 @@ class CanteraThermoKinetics(ct.Solution):
     """
     
     def generalized_Stoich_matrix_const_p(self):
-        """N_s+1 x 2*N_r matrix containing the S components in column major format, 
+        """N_v x 2*N_r matrix containing the S components in column major format, 
         such that S dot Rvec yields RHS"""
         nu_p = self.product_stoich_coeffs()
         nu_r = self.reactant_stoich_coeffs()
@@ -181,7 +192,7 @@ class CanteraThermoKinetics(ct.Solution):
     
 
     def generalized_Stoich_matrix_const_v(self):
-        """N_s+1 x 2*N_r matrix containing the S components in column major format, 
+        """N_v x 2*N_r matrix containing the S components in column major format, 
         such that S dot Rvec yields RHS"""
         Wk = self.molecular_weights
         R = ct.gas_constant
@@ -206,7 +217,7 @@ class CanteraThermoKinetics(ct.Solution):
         Hspec = R * self.T * hspec #[J/Kmol]
         smatT = np.sum([numat[i] * (-Hspec[i] * c1g + c2g) for i in range(self.n_species)],axis=0)
         Smat = np.vstack((smat,smatT))
-        return Smat
+        return Smat[:self.nv]
     
     def Rates_vector(self):
         """ 2*Nr-long vector containing the rates of progress in [Kmol/m3/s]"""        
@@ -225,7 +236,7 @@ class CanteraThermoKinetics(ct.Solution):
         T = self.T
         p = self.P
         y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_p()   #ns-long (T,Y1,...,Yn-1)
+        ydot = self.rhs_const_p()   #ns+1-long (Y1,...,Yn,T)
         
         #create a jacobian vector
         jac2D = np.zeros((self.n_species+1, self.n_species+1))
@@ -262,7 +273,7 @@ class CanteraThermoKinetics(ct.Solution):
         T = self.T
         rho = self.density
         y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_v()   #ns-long (T,Y1,...,Yn-1)
+        ydot = self.rhs_const_v()   #ns+1-long (Y1,...,Yn,T)
         
         #create a jacobian vector
         jac2D = np.zeros((self.n_species+1, self.n_species+1))
@@ -371,13 +382,13 @@ class CanteraThermoKinetics(ct.Solution):
         Wk = self.molecular_weights
         cp = self.cp_mass
         TJrow = Hspec / ( Wk * cp)
-        TJcol = self.jac = self.jacobian[0:ns,-1]
+        TJcol = self.jacobian[0:ns,-1]
         JacThermal = np.outer(TJcol,TJrow)
         return JacThermal
     
     def jacKinetic(self):
         ns = self.n_species
-        jacKinetic = self.jac = self.jacobian[0:ns,0:ns] 
+        jacKinetic = self.jacobian[0:ns,0:ns] 
         return jacKinetic
 
 

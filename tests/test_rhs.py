@@ -19,8 +19,6 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 #push pressure
 gas.constP = P
 
-#equilibrium
-#gas.equilibrate('HP')
 
 #integrate ODE
 r = ct.IdealGasConstPressureReactor(gas)
@@ -36,7 +34,7 @@ while sim.time < 1.5e-3:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    rhs = gas.RHS
+    rhs = gas.source
     Smat = gas.generalized_Stoich_matrix
     rvec = gas.R_vector
     splitrhs = np.dot(Smat,rvec)

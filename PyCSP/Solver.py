@@ -39,7 +39,7 @@ class CSPsolver:
     def rhs(self,y):
         self.gas.set_stateYT(y)
         dydt = np.zeros(self.gas.nv) 
-        dydt = self.gas.RHS
+        dydt = self.gas.source
         return dydt
         
     def set_integrator(self,**kwargs):
