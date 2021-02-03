@@ -30,8 +30,12 @@ class CanteraCSP(CanteraThermoKinetics):
           
     @jacobiantype.setter
     def jacobiantype(self,value):
-        if value == 'full' or value == 'kinetic' or value == 'constrained':
+        if value == 'full':
+            self.nv = self.n_species + 1   
             self._jacobiantype = value
+        elif value == 'kinetic' or value == 'constrained':
+            self.nv = self.n_species    
+            self._jacobiantype = value 
         else:
             raise ValueError("Invalid jacobian type --> %s" %value)
             
@@ -272,7 +276,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
     
-        self.nv = self.n_species + 1     
+        #self.nv = self.n_species + 1     
         self._rhs = self.source.copy()
         self._jac = self.jacobian.copy()
         #eigensystem
@@ -289,7 +293,7 @@ class CanteraCSP(CanteraThermoKinetics):
         """Computes kinetic kernel. Its dimension is Nspecies.
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
-        self.nv = self.n_species
+        #self.nv = self.n_species
         self._rhs = self.source.copy()[:self.nv]
         self._jac = self.jacKinetic().copy()       
         #eigensystem
@@ -305,7 +309,7 @@ class CanteraCSP(CanteraThermoKinetics):
         """Computes constrained (to enthalpy) kernel. Its dimension is Nspecies .
         Returns [evals,Revec,Levec,amplitudes]. 
         Input must be an instance of the CSPCantera class"""
-        self.nv = self.n_species
+        #self.nv = self.n_species
         self._rhs = self.source.copy()[:self.nv]
         kineticjac = self.jacKinetic()  
         thermaljac = self.jacThermal()   
