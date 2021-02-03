@@ -63,7 +63,7 @@ while sim.time < t_end:
 endtimeCV = time.time()
 
 elapsedcsp = endtimecsp - starttimecsp
-print('CSP solver elapsed time [s]: %10.3e, # of steps taken: %5i' % (elapsedcsp,states.t.shape[0]))
+print('CSP solver elapsed time [s]: %10.3e, # of steps taken: %5i, # of kernel evaluations: %5i' % (elapsedcsp,states.t.shape[0],gas.nUpdates))
 
 elapsedCV = endtimeCV - starttimeCV
 print('CVODE elapsed time [s]:      %10.3e, # of steps taken: %5i' % (elapsedCV,statesCV.t.shape[0]))
