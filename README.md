@@ -1,6 +1,6 @@
 # PyCSP
 A collection of tools based on Computational Singular Perturbation for the analysis of chemically reacting systems. 
-Requires Python <=3.7.0, cantera=2.4.0, matplotlib
+Requires Python <=3.7.0, cantera=2.4.0, numpy, matplotlib
 
 Installation in a new environment called "py36" with Anaconda (suggested, oterwise skip to #3):
 From PyCSP folder
