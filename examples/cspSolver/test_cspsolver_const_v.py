@@ -24,7 +24,7 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 rho = gas.density
 gas.constRho = rho
 
-#nitial condition
+#initial condition
 y0 = np.hstack((gas.Y,gas.T))
 t0 = 0.0
 

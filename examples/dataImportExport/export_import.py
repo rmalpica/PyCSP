@@ -19,10 +19,7 @@ P = ct.one_atm
 #gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
-#push pressure
-gas.constP = P
-#set jacobiantype
-gas.jacobiantype = 'full'
+
 
 #integrate ODE and dump test data
 r = ct.IdealGasConstPressureReactor(gas)
@@ -51,8 +48,10 @@ Temp = data[:,1]
 Pressure = data[:,2]
 Y =  data[:,3:]
 
-
 gas = csp.CanteraCSP('hydrogen.cti')
+
+#set jacobiantype
+gas.jacobiantype = 'full'
 
 evals = []
 Revec = []
