@@ -21,4 +21,4 @@ Several examples are available in the Examples folder to test the functionalitie
 Cantera chem-input files are required. Cantera offers a utility to convert chemkin-format files into cantera-format: https://cantera.org/tutorials/ck2cti-tutorial.html
 
 # Documentation
-WIP
+Can be found in the /documentation folder
