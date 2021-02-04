@@ -5,7 +5,6 @@
 import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import PyCSP.Functions as cspF
 import PyCSP.Solver as cspS
 import time

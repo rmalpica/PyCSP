@@ -12,34 +12,95 @@ import PyCSP.Functions as cspF
 
 class CSPsolver:
     def __init__(self, gas):   
-        self.gas = gas
-        self.y = []
-        self.t = []
-        self.Qs = []
-        self.Rc = []
-        self.dt = 1e+10
+        self._gas = gas
+        self._y = []
+        self._t = []
+        self._Qs = []
+        self._Rc = []
+        self._dt = 1e+10
         self.csprtol = 1e-2
         self.cspatol = 1e-8
         self.jacobiantype = 'full'
-        self.M = 0
+        self._M = 0
         self.factor = 0.2
     
+    @property
+    def csprtol(self):
+        return self._csprtol
+          
+    @csprtol.setter
+    def csprtol(self,value):
+        self._csprtol = value
+    
+    @property
+    def cspatol(self):
+        return self._cspatol
+          
+    @cspatol.setter
+    def cspatol(self,value):
+        self._cspatol = value
+             
+    @property
+    def jacobiantype(self):
+        return self._jacobiantype
+          
+    @jacobiantype.setter
+    def jacobiantype(self,value):
+        if value == 'full':
+            self._jacobiantype = value
+        else:
+            raise ValueError("Invalid jacobian type --> %s" %value)
+    
+    @property
+    def Qs(self):
+        return self._Qs      
+    
+    @property
+    def Rc(self):
+        return self._Rc   
+    
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def t(self):
+        return self._t 
+    
+    @property
+    def dt(self):
+        return self._dt 
+
+    @property
+    def M(self):
+        return self._M 
+    
+    @property
+    def factor(self):
+        return self._factor
+          
+    @factor.setter
+    def factor(self,value):
+        self._factor = value
+        
+        
+    
     def CSPcore(self,y):
-        self.gas.set_stateYT(y)
-        lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
-        M = self.gas.calc_exhausted_modes(rtol=self.csprtol, atol=self.cspatol)
+        self._gas.set_stateYT(y)
+        lam,A,B,f = self._gas.get_kernel()
+        M = self._gas.calc_exhausted_modes(rtol=self.csprtol, atol=self.cspatol)
         tau = cspF.timescales(lam)
         return [A,B,f,lam,tau,M]
     
     def CSPcoreBasic(self,y):
-        self.gas.set_stateYT(y)
-        lam,A,B,f = self.gas.get_kernel(jacobiantype=self.jacobiantype)
+        self._gas.set_stateYT(y)
+        lam,A,B,f = self._gas.get_kernel()
         return [A,B,f,lam]
     
     def rhs(self,y):
-        self.gas.set_stateYT(y)
-        dydt = np.zeros(self.gas.nv) 
-        dydt = self.gas.source
+        self._gas.set_stateYT(y)
+        dydt = np.zeros(self._gas.nv) 
+        dydt = self._gas.source
         return dydt
         
     def set_integrator(self,**kwargs):
@@ -56,26 +117,27 @@ class CSPsolver:
                 sys.exit('Unknown keyword in set_integrator')
                     
     def set_initial_value(self,y0,t0):
-        self.y = y0
-        self.t = t0
+        self._y = y0
+        self._t = t0
     
     def integrate(self):
         #calc CSP basis and projection matrix Qs in yold
+        self._gas.jacobiantype = self.jacobiantype
         yold = self.y
         A,B,f,lam,tau,M = self.CSPcore(yold)
-        self.M = M
-        self.Qs = QsMatrix(A,B,M)
+        self._M = M
+        self._Qs = QsMatrix(A,B,M)
         #advance in time dydt = Qsg with RK4 to ystar
-        self.dt = smart_timescale(tau,self.factor,self.M,lam[M],self.dt)
+        self._dt = smart_timescale(tau,self.factor,self.M,lam[M],self.dt)
         ystar = self.RK4csp()
         #calc CSP basis and radical matrix Rc in ystar
-        self.y = ystar
+        self._y = ystar
         A,B,f,lam = self.CSPcoreBasic(ystar)
-        self.Rc = RCorr(A,f,lam,self.M)
+        self._Rc = RCorr(A,f,lam,self.M)
         #apply radical correction and advance to ynew
         ynew = self.radical_correction()
-        self.y = ynew
-        self.t = self.t + self.dt
+        self._y = ynew
+        self._t = self.t + self.dt
     
                                 
     def RK4csp(self):
