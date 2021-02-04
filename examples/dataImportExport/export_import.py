@@ -21,7 +21,8 @@ gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 #push pressure
 gas.constP = P
-
+#set jacobiantype
+gas.jacobiantype = 'full'
 
 #integrate ODE and dump test data
 r = ct.IdealGasConstPressureReactor(gas)
@@ -63,7 +64,7 @@ for step in range(time.shape[0]):
     gas.constP = Pressure[step]
     state = np.append(Y[step],Temp[step])
     gas.set_stateYT(state)
-    lam,R,L,f = gas.get_kernel(jacobiantype='full')
+    lam,R,L,f = gas.get_kernel()
     NofDM = gas.calc_exhausted_modes(rtol=1.0e-2,atol=1.0e-8)
 
     evals.append(lam)

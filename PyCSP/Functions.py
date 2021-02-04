@@ -108,16 +108,10 @@ class CanteraCSP(CanteraThermoKinetics):
         self._changed = False
  
         
-    def get_kernel(self, **kwargs):
+    def get_kernel(self):
         """Retrieves the stored CSP kernel.
-        Optional argument is jacobiantype.
-        If provided and different from stored value, kernel is recomputed"""
-        for key, value in kwargs.items():
-            if (key == 'jacobiantype'): 
-                if (self.jacobiantype != value): self.jacobiantype = value
-            else:
-                raise ValueError("unknown argument --> %s" %key)
-        if self.is_changed(): 
+        If any attributes changed before latest query, kernel is recomputed"""
+        if self.is_changed():
             self.update_kernel()
             self._changed = False
         return [self.evals,self.Revec,self.Levec,self.f]

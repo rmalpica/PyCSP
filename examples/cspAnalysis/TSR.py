@@ -19,7 +19,8 @@ P = ct.one_atm
 gas.TP = T, P
 gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 gas.constP = P
-
+#set jacobiantype
+gas.jacobiantype = 'full'
 
 #integrate ODE
 r = ct.IdealGasConstPressureReactor(gas)
@@ -40,7 +41,7 @@ while sim.time < 10:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
     print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel(jacobiantype='full')
+    lam,R,L,f = gas.get_kernel()
     NofDM = gas.calc_exhausted_modes(rtol=1.0e-3,atol=1.0e-10)
     omegatau = gas.calc_TSR()
     evals.append(lam)
