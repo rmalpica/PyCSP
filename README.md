@@ -1,4 +1,5 @@
 # PyCSP
+![Screenshot](logo.png)
 A collection of tools based on Computational Singular Perturbation for the analysis of chemically reacting systems. 
 Requires Python <=3.7.0, cantera=2.4.0, numpy, matplotlib
 
