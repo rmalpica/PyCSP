@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan  5 12:26:32 2021
+
+@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
+"""
+import sys
+import numpy as np
+
+
+class CSPsimplify:
+    def __init__(self, gas, dataset):   
+        self._gas = gas
+        self._nr = self._gas.n_reactions
+        self._ns = self._gas.n_species
+        self._nv = self._gas.n_species+1
+        self.csprtol = 1e-2
+        self.cspatol = 1e-8
+        self.scaled = False
+        self.recovery = False
+        self.problemtype = 'constP'
+        self.dataset = dataset
+        self.targetset = {}
+        self.ImpoFast = []
+        self.ImpoSlow = []
+        self.speciestype = []
+ 
+    @property 
+    def targetset(self):
+        return self._targetset
+    
+    @targetset.setter
+    def targetset(self,items):
+        self._targetset = items
+
+    @property 
+    def nv(self):
+        return self._nv
+    
+    @property 
+    def nr(self):
+        return self._nr
+    
+    @property 
+    def ns(self):
+        return self._ns
+    
+    @property
+    def csprtol(self):
+        return self._csprtol
+          
+    @csprtol.setter
+    def csprtol(self,value):
+        self._csprtol = value
+        self._gas.csprtol = value
+    
+    @property
+    def cspatol(self):
+        return self._cspatol
+          
+    @cspatol.setter
+    def cspatol(self,value):
+        self._cspatol = value
+        self._gas.cspatol = value
+             
+    @property
+    def problemtype(self):
+        return self._problemtype
+    
+    @problemtype.setter
+    def problemtype(self,value):
+        if value == 'constP' or value == 'constRho':
+            self._problemtype = value
+        else:
+            raise ValueError("Invalid problem type --> %s" %value)
+
+
+    
+    def dataset_info(self):
+        import time
+        lenData = self.dataset.shape[0] 
+        randY =  np.random.dirichlet(np.ones(self.ns),size=1)
+        self._gas.TP = 1000,101325.0
+        self._gas.Y = randY
+        self._gas.constP = 101325.0
+        start = time.time()
+        api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False)
+        end = time.time()
+        time = end-start
+        totaltime = time*lenData
+        print('Number of species:                %i' % self.ns)
+        print('Number of reactions:              %i' % self.nr)
+        print('Dataset length:                   %i' % lenData)
+        print('Estimated total processing time:  %10.3e [s]' % totaltime)
+        
+   
+    def process_dataset(self):
+        #calc CSP basis and importance indexes
+        self._gas.jacobiantype = 'full'
+        lenData = self.dataset.shape[0] 
+        self.ImpoFast = np.zeros((lenData,self.nv,2*self.nr), dtype=float)
+        self.ImpoSlow = np.zeros((lenData,self.nv,2*self.nr), dtype=float)
+        self.speciestype = np.zeros((lenData,self.nv), dtype=object)
+        for idx in range(lenData):
+            self._gas.Y = self.dataset[idx,:-2]
+            self._gas.TP = self.dataset[idx,-2],self.dataset[idx,-1]
+            if (self.problemtype == 'constP'):
+                self._gas.constP = self.dataset[idx,-1]
+            else:
+                rho = self._gas.density
+                self._gas.constRho = rho
+            api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False)
+            self.ImpoFast[idx] = np.abs(ifast)
+            self.ImpoSlow[idx] = np.abs(islow)
+            self.speciestype[idx] = species_type
+
+        
+    def simplify_mechanism(self, threshold):
+        if len(self.ImpoFast) == 0:
+            raise ValueError("Need to process dataset first")
+        if len(self.targetset) == 0:
+            raise ValueError("Need to define targetset")
+        lenData = self.dataset.shape[0] 
+        
+        all_active_species = [] 
+        all_active_reacs = np.zeros((lenData,2*self.nr),dtype=int)
+        for idx in range(lenData): #loop over dataset points
+            active_species = self.targetset.copy()
+            trace,fast,slow = self.get_species_sets(self.speciestype[idx])
+            iter = 0
+            while True:
+                previous_active = active_species.copy()
+                #update species relevant to active species
+                for i,specname in zip(range(self.ns),self._gas.species_names):
+                    active_reactions = np.zeros(2*self.nr)
+                    #print(specname)
+                    if specname in active_species and specname in fast:
+                        #print('fast species')
+                        active_reactions = find_active_reactions(i,self.ImpoSlow[idx],threshold,self.scaled)
+                    elif specname in active_species and specname in slow:
+                        #print('slow species')
+                        active_reactions = find_active_reactions(i,self.ImpoFast[idx],threshold,self.scaled)
+                    #else:
+                        #print('trace')
+                
+                    newspecies = self.find_species_in_reactions(active_reactions)
+                    active_species.update(newspecies)        
+                
+                #print(active_species)
+                
+                #update species relevant to temperature
+                active_reactions = find_active_reactions(self.ns,self.ImpoFast[idx],threshold,self.scaled)  
+                newspecies = self.find_species_in_reactions(active_reactions)
+                active_species.update(newspecies) 
+
+                active_species.discard(trace)
+                
+                iter = iter + 1
+                #print(active_species)
+                if active_species == previous_active:
+                    break
+            all_active_species.append(active_species)  #list containing active species in each datapoint
+            all_active_reacs[idx] = active_reactions  #list containing active reactions in each datapoint
+            
+      
+        
+        #union of active reactions
+        reactions = self.unite_active_reactions(all_active_reacs)
+        species = set().union(*all_active_species)
+        
+        #recovery
+        reactions = self.recoveryy(species)
+        
+        return species, reactions
+
+
+
+    def find_species_in_reactions(self, active_reactions):
+        species = {}
+        for k in range(self.nr):
+            if active_reactions[k] == 1:
+                species.update(self._gas.reaction(k).reactants)
+                species.update(self._gas.reaction(k).products)
+        for k in range(self.nr):
+            if active_reactions[self.nr+k] == 1:
+                species.update(self._gas.reaction(k).reactants)
+                species.update(self._gas.reaction(k).products)
+        return species
+    
+    
+    def get_species_sets(self,speciestype):
+        trace = set()
+        fast = set()
+        slow = set()
+        for k,item in zip(range(self.ns),speciestype):            
+            if item == 'trace': 
+                trace.add(self._gas.species_name(k))
+            elif item == 'slow': 
+                slow.add(self._gas.species_name(k))
+            elif item == 'fast': 
+                fast.add(self._gas.species_name(k))
+        return trace,fast,slow            
+
+    def unite_active_reactions(self, reacs):
+        reactions = []
+        for k in range(self.nr):
+            if np.any(reacs[:, k] == 1) or np.any(reacs[:, k+self.nr] == 1):
+                reactions.append(self._gas.reaction(k)) 
+        return reactions
+            
+    
+    def recoveryy(self,species):
+        reactions = []
+        for k in range(self.nr):
+            if set(self._gas.reaction(k).reactants.keys()).issubset(species) and set(self._gas.reaction(k).reactants.keys()).issubset(species):
+                reactions.append(self._gas.reaction(k)) 
+        return reactions
+            
+                
+    
+def find_active_reactions(ivar,impo,thr,scaled):
+    if scaled:
+        Imax = np.max(impo[ivar])
+    else:
+        Imax = 1.0
+    active_reactions = [1 if impo[ivar,k]/Imax >= thr else 0 for k in range(impo.shape[1])]
+    return active_reactions
+
+
+            

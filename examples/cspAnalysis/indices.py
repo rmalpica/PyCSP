@@ -6,7 +6,6 @@ import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
-import sys
 import PyCSP.Functions as csp
 
 
