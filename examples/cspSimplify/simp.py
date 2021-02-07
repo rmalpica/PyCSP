@@ -52,7 +52,6 @@ simplifier.dataset_info()
 
 simplifier.process_dataset()
 
-sys.exit()
 
 tol = 0.1
 species, reactions = simplifier.simplify_mechanism(tol)
