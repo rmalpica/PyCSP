@@ -154,6 +154,7 @@ class CSPsimplify:
                 newspecies = self.find_species_in_reactions(active_reactions)
                 active_species.update(newspecies) 
 
+                #remove trace species
                 active_species.discard(trace)
                 
                 iter = iter + 1
@@ -169,7 +170,7 @@ class CSPsimplify:
         reactions = self.unite_active_reactions(all_active_reacs)
         species = set().union(*all_active_species)
         
-        #recovery
+        #recovery: grab all the reactions containing active species
         reactions = self.recoveryy(species)
         
         return species, reactions
