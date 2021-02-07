@@ -465,18 +465,30 @@ def timescales(evals):
 """
 
 def CSPIndices(Proj, Smat, rvec):
+    """Returns a Nv x 2Nr matrix of indexes, computed as Proj S r """
     ns = Smat.shape[0]
     nr = Smat.shape[1]
     Index = np.zeros((ns,nr))
     for i in range(ns):
-        norm = 0.0
-        for k in range(nr):
-            Index[i,k] = np.dot(Proj[i,:],Smat[:,k]) * rvec[k]
-            norm = norm + abs(Index[i,k])
-        for k in range(nr):
-            Index[i,k] = Index[i,k]/norm if (norm != 0.0) else 0.0 
+        Proj_i = Proj[i,:]
+        Index[i,:] = CSPIndices_one_var(Proj_i, Smat, rvec)
     #np.sum(abs(Index),axis=1) check: a n-long array of ones
     return Index
+
+def CSPIndices_one_var(Proj_i, Smat, rvec):
+    """Given the i-th row of the projector, computes 2Nr indexes of reactions to variable i.
+    Proj_i must be a nv-long array. Returns a 2Nr-long array"""
+    nr = Smat.shape[1]
+    Index = np.zeros((nr))
+    norm = 0.0
+    for k in range(nr):
+        Index[k] = np.dot(Proj_i,Smat[:,k]) * rvec[k]
+        norm = norm + abs(Index[k])
+    for k in range(nr):
+        Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
+    #np.sum(abs(Index),axis=1) check: a n-long array of ones
+    return Index
+
 
 def CSP_amplitude_participation_indices(B, Smat, rvec):
     """Ns x 2Nr array containing participation index of reaction k to variable i"""
@@ -497,6 +509,8 @@ def CSP_pointers(A,B):
     return pointers
 
 def classify_species(stateYT, rhs, pointers, M):
+    """species classification
+    """
     n = len(stateYT)
     ytol = 1e-20
     rhstol = 1e-13
@@ -504,8 +518,8 @@ def classify_species(stateYT, rhs, pointers, M):
     species_type = np.full(n,'slow',dtype=object)
     species_type[sort[0:M]] = 'fast'
     species_type[-1] = 'slow'  #temperature is always slow
-    for i in range(1,n):
-        if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace' 
+    for i in range(n-1):
+        if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace'
     return species_type
         
 def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):
@@ -533,3 +547,52 @@ def CSP_timescale_participation_indices(nr, JacK, evals, A, B):
     for i in range(nv):
         TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B)
     return TPI    
+
+
+def CSPtiming(gas):
+    import time
+    ns = gas.n_species
+    randY =  np.random.dirichlet(np.ones(ns),size=1)
+    gas.TP = 1000,101325.0
+    gas.Y = randY
+    gas.constP = 101325.0
+    gas.jacobiantype='full'
+    gas.rtol=1.0e-3
+    gas.atol=1.0e-10
+    starttime = time.time()
+    gas.update_kernel()
+    endtime = time.time()
+    timekernel = endtime - starttime
+    starttime = time.time()
+    M = gas.calc_exhausted_modes()
+    endtime = time.time()
+    timeM = endtime - starttime
+    starttime = time.time()
+    TSR = gas.calc_TSR()
+    endtime = time.time()
+    timeTSR = endtime - starttime
+    starttime = time.time()
+    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=True,Impo=False,species_type=False,TPI=False)
+    endtime = time.time()
+    timeAPI = endtime - starttime
+    starttime = time.time()
+    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=True,species_type=False,TPI=False)
+    endtime = time.time()
+    timeImpo = endtime - starttime
+    starttime = time.time()
+    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=False,species_type=True,TPI=False)
+    endtime = time.time()
+    timeclassify = endtime - starttime
+    starttime = time.time()
+    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=False,species_type=False,TPI=True)
+    endtime = time.time()
+    timeTPI = endtime - starttime
+    print ('Time Kernel:      %10.3e' %timekernel)
+    print ('Time findM:       %10.3e' %timeM)
+    print ('Time TSR:         %10.3e' %timeTSR)
+    print ('Time API indexes: %10.3e' %timeAPI)
+    print ('Time Imp indexes: %10.3e' %timeImpo)
+    print ('Time TPI indexes: %10.3e' %timeTPI)
+    print ('Time class specs: %10.3e' %timeclassify)
+    print ('*** all times in seconds')
+    

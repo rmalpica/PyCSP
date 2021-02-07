@@ -5,7 +5,6 @@
 import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import PyCSP.Functions as csp
 
 #create gas from original mechanism file hydrogen.cti
@@ -22,6 +21,9 @@ gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
 rho = gas.density
 gas.constRho = rho
 
+
+#set jacobiantype
+gas.jacobiantype = 'full'
 
 #integrate ODE
 r = ct.IdealGasReactor(gas)
