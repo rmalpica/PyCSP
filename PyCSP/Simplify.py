@@ -170,8 +170,12 @@ class CSPsimplify:
         reactions = self.unite_active_reactions(all_active_reacs)
         species = set().union(*all_active_species)
         
+        
         #recovery: grab all the reactions containing active species
-        reactions = self.recoveryy(species)
+        reactions = self.find_reactions_given_species(species)
+        species = [self._gas.species(name) for name in species]  #convert to species object
+        
+        print('@threshold: %1.3f, Simplified mechanism contains %i species and %i reactions' % (threshold, len(species), len(reactions)))
         
         return species, reactions
 
@@ -211,10 +215,10 @@ class CSPsimplify:
         return reactions
             
     
-    def recoveryy(self,species):
+    def find_reactions_given_species(self,species):
         reactions = []
         for k in range(self.nr):
-            if set(self._gas.reaction(k).reactants.keys()).issubset(species) and set(self._gas.reaction(k).reactants.keys()).issubset(species):
+            if set(self._gas.reaction(k).reactants.keys()).issubset(species) and set(self._gas.reaction(k).products.keys()).issubset(species):
                 reactions.append(self._gas.reaction(k)) 
         return reactions
             
