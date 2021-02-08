@@ -12,7 +12,7 @@ setuptools.setup(
     author_email="riccardo.malpicagalassi@uniroma1.it",
     description="A collection of tools for the Computational Singular Perturbation analysis of chemically reacting flows",
     url="https://github.com/rmalpica/PyCSP",
-    packages=setuptools.find_packages(),
+    packages=['PyCSP'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
