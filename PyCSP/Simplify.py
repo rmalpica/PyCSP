@@ -5,7 +5,6 @@ Created on Tue Jan  5 12:26:32 2021
 
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-import sys
 import numpy as np
 
 
@@ -18,7 +17,6 @@ class CSPsimplify:
         self.csprtol = 1e-2
         self.cspatol = 1e-8
         self.scaled = False
-        self.recovery = False
         self.problemtype = 'constP'
         self.dataset = dataset
         self.targetset = {}
@@ -92,7 +90,7 @@ class CSPsimplify:
         print('Number of species:                %i' % self.ns)
         print('Number of reactions:              %i' % self.nr)
         print('Dataset length:                   %i' % lenData)
-        print('Estimated total processing time:  %10.3e [s]' % totaltime)
+        print('Estimated data processing time:  %10.3e [s]' % totaltime)
         
    
     def process_dataset(self):
@@ -134,20 +132,14 @@ class CSPsimplify:
                 #update species relevant to active species
                 for i,specname in zip(range(self.ns),self._gas.species_names):
                     active_reactions = np.zeros(2*self.nr)
-                    #print(specname)
                     if specname in active_species and specname in fast:
-                        #print('fast species')
                         active_reactions = find_active_reactions(i,self.ImpoSlow[idx],threshold,self.scaled)
                     elif specname in active_species and specname in slow:
-                        #print('slow species')
                         active_reactions = find_active_reactions(i,self.ImpoFast[idx],threshold,self.scaled)
-                    #else:
-                        #print('trace')
                 
                     newspecies = self.find_species_in_reactions(active_reactions)
                     active_species.update(newspecies)        
                 
-                #print(active_species)
                 
                 #update species relevant to temperature
                 active_reactions = find_active_reactions(self.ns,self.ImpoFast[idx],threshold,self.scaled)  
