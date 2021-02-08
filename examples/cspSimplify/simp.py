@@ -38,16 +38,16 @@ while sim.time < 1000:
 dataset = np.concatenate((states.Y,states.T[:,np.newaxis],states.P[:,np.newaxis]),axis=1)
 print('Dataset created, start processing...')
 
-dataset = dataset[::64]
+dataset = dataset[::16]
 
-#-------IMPORT DATA---------
-#read data from file
-
-
+#init simplifier
 simplifier = simp.CSPsimplify(dtl_mech,dataset)
 
+#simplifier settings
 simplifier.targetset = {'CH4','O2','N2','HCO','H2O','CO2'}
+simplifier.problemtype = 'constP'
 simplifier.scaled = True
+
 simplifier.dataset_info()
 
 #process dataset
