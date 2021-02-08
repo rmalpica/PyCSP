@@ -120,7 +120,6 @@ class CSPsimplify:
         if len(self.targetset) == 0:
             raise ValueError("Need to define targetset")
         lenData = self.dataset.shape[0] 
-        
         all_active_species = [] 
         all_active_reacs = np.zeros((lenData,2*self.nr),dtype=int)
         for idx in range(lenData): #loop over dataset points
@@ -130,11 +129,12 @@ class CSPsimplify:
             while True:
                 previous_active = active_species.copy()
                 #update species relevant to active species
+                #print('iteration %i' % iter)
                 for i,specname in zip(range(self.ns),self._gas.species_names):
                     active_reactions = np.zeros(2*self.nr)
-                    if specname in active_species and specname in fast:
+                    if specname in active_species and specname in slow:
                         active_reactions = find_active_reactions(i,self.ImpoSlow[idx],threshold,self.scaled)
-                    elif specname in active_species and specname in slow:
+                    elif specname in active_species and specname in fast:
                         active_reactions = find_active_reactions(i,self.ImpoFast[idx],threshold,self.scaled)
                 
                     newspecies = self.find_species_in_reactions(active_reactions)
@@ -142,22 +142,26 @@ class CSPsimplify:
                 
                 
                 #update species relevant to temperature
-                active_reactions = find_active_reactions(self.ns,self.ImpoFast[idx],threshold,self.scaled)  
+                active_reactions = find_active_reactions(self.ns,self.ImpoSlow[idx],threshold,self.scaled)  
                 newspecies = self.find_species_in_reactions(active_reactions)
                 active_species.update(newspecies) 
-
+                
+                #print('before cleaning traces')
+                #print(active_species)
+                
                 #remove trace species
-                active_species.discard(trace)
+                active_species.difference_update(trace)
+                
+                #print('after cleaning traces')
+                #print(active_species)
                 
                 iter = iter + 1
-                #print(active_species)
                 if active_species == previous_active:
                     break
             all_active_species.append(active_species)  #list containing active species in each datapoint
             all_active_reacs[idx] = active_reactions  #list containing active reactions in each datapoint
             
       
-        
         #union of active reactions
         reactions = self.unite_active_reactions(all_active_reacs)
         species = set().union(*all_active_species)
@@ -166,7 +170,7 @@ class CSPsimplify:
         #recovery: grab all the reactions containing active species
         reactions = self.find_reactions_given_species(species)
         species = [self._gas.species(name) for name in species]  #convert to species object
-        
+
         print('@threshold: %1.3f, Simplified mechanism contains %i species and %i reactions' % (threshold, len(species), len(reactions)))
         
         return species, reactions
@@ -178,8 +182,7 @@ class CSPsimplify:
         for k in range(self.nr):
             if active_reactions[k] == 1:
                 species.update(self._gas.reaction(k).reactants)
-                species.update(self._gas.reaction(k).products)
-        for k in range(self.nr):
+                species.update(self._gas.reaction(k).products)        
             if active_reactions[self.nr+k] == 1:
                 species.update(self._gas.reaction(k).reactants)
                 species.update(self._gas.reaction(k).products)
@@ -218,10 +221,10 @@ class CSPsimplify:
     
 def find_active_reactions(ivar,impo,thr,scaled):
     if scaled:
-        Imax = np.max(impo[ivar])
+        Imax = np.max(np.abs(impo[ivar]))
     else:
         Imax = 1.0
-    active_reactions = [1 if impo[ivar,k]/Imax >= thr else 0 for k in range(impo.shape[1])]
+    active_reactions = [1 if np.abs(impo[ivar,k]) >= thr*Imax else 0 for k in range(impo.shape[1])]
     return active_reactions
 
 
