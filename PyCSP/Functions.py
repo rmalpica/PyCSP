@@ -415,12 +415,16 @@ def eigsys(jac):
     Both Revec (since it is transposed) and Levec (naturally) contain row vectors,
     such that an eigenvector can be retrieved using R/Levec[index,:] """
     
+    ncons = len(jac) - np.linalg.matrix_rank(jac)
     evals, Revec = np.linalg.eig(jac)
     
     #sort 
     idx = np.argsort(abs(evals))[::-1]   
     evals = evals[idx]
     Revec = Revec[:,idx]
+    
+    #zero-out conserved eigenvalues (last ncons)
+    evals[-ncons:] = 0.0
 
     #adjust complex conjugates
     cmplx = Revec.imag.any(axis=0)   #boolean indexing of complex eigenvectors (cols)
