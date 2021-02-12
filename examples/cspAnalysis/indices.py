@@ -87,7 +87,8 @@ ax.grid(False)
 box = ax.get_position()
 ax.set_position([box.x0, box.y0, box.width * 0.6, box.height])
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-plt.show()
+plt.show(block = False)
+plt.savefig('TSR-API.png', dpi=800, transparent=False)
 
 thr = 0.1
 TSRreacIdx = np.unique(np.nonzero(np.abs(TSRTPI) > thr)[1])  #indexes of reactions with TSRapi > thr
@@ -103,4 +104,5 @@ ax.grid(False)
 box = ax.get_position()
 ax.set_position([box.x0, box.y0, box.width * 0.6, box.height])
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-plt.show()
+plt.show(block = False)
+plt.savefig('TSR-TPI.png', dpi=800, transparent=False)

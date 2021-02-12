@@ -101,15 +101,18 @@ ax.set_xlabel('Time (s)')
 ax.set_ylabel('Temperature (K)')
 ax.legend(loc='lower right')
 ax.set_xlim([0, 2])
-plt.show()
+plt.savefig('ignition.png', dpi=800, transparent=False)
+
+dtl_idt = states.t[states.rhsT.argmax()]
+simp_idt = [all_states_simp[i].t[all_states_simp[i].rhsT.argmax()] for i in range(nmech)]
+err_idt = abs((simp_idt-dtl_idt)/dtl_idt)*100
 
 fig, ax = plt.subplots(figsize=(6,4))
-ax.axhline(states.t[states.rhsT.argmax()], color='b')
-for i in range(nmech):
-    delay = all_states_simp[i].t[all_states_simp[i].rhsT.argmax()]
-    ax.scatter(simp_mech[i].n_species, delay, color='red')
+ax.plot([simp_mech[i].n_species for i in range(nmech)], err_idt, color='red', marker='.')
 ax.set_xlabel('# of species')
-ax.set_ylabel('ignition delay time [s]')
-plt.show
+ax.set_ylabel('ignition delay time relative Error [%]')
+ax.set_yscale('log')
+ax.set_ylim([1e-3, 1e2])
+plt.savefig('ign_delay_error.png', dpi=800, transparent=False)
 
 
