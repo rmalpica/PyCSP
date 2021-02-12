@@ -125,36 +125,34 @@ class CSPsimplify:
         for idx in range(lenData): #loop over dataset points
             active_species = self.targetset.copy()
             trace,fast,slow = self.get_species_sets(self.speciestype[idx])
-            iter = 0
+            iter = 0            
             while True:
+                
                 previous_active = active_species.copy()
                 #update species relevant to active species
                 #print('iteration %i' % iter)
-                for i,specname in zip(range(self.ns),self._gas.species_names):
-                    active_reactions = np.zeros(2*self.nr)
+                active_reactions = np.zeros(2*self.nr)
+                for i,specname in zip(range(self.ns),self._gas.species_names):               
+                    newreactions = np.zeros(2*self.nr)
                     if specname in active_species and specname in slow:
-                        active_reactions = find_active_reactions(i,self.ImpoSlow[idx],threshold,self.scaled)
+                        newreactions = find_active_reactions(i,self.ImpoSlow[idx],threshold,self.scaled)
                     elif specname in active_species and specname in fast:
-                        active_reactions = find_active_reactions(i,self.ImpoFast[idx],threshold,self.scaled)
-                
-                    newspecies = self.find_species_in_reactions(active_reactions)
-                    active_species.update(newspecies)        
-                
-                
+                        newreactions = find_active_reactions(i,self.ImpoFast[idx],threshold,self.scaled)
+                    active_reactions[newreactions == 1] = 1  
+                    
                 #update species relevant to temperature
-                active_reactions = find_active_reactions(self.ns,self.ImpoSlow[idx],threshold,self.scaled)  
-                newspecies = self.find_species_in_reactions(active_reactions)
-                active_species.update(newspecies) 
+                newreactions = find_active_reactions(self.ns,self.ImpoSlow[idx],threshold,self.scaled)  
+                active_reactions[newreactions == 1] = 1  
                 
-                #print('before cleaning traces')
-                #print(active_species)
+                newspecies = self.find_species_in_reactions(active_reactions)
+                active_species.update(newspecies)            
                 
                 #remove trace species
                 active_species.difference_update(trace)
                 
                 #print('after cleaning traces')
                 #print(active_species)
-                
+                                
                 iter = iter + 1
                 if active_species == previous_active:
                     break
@@ -185,7 +183,7 @@ class CSPsimplify:
                 species.update(self._gas.reaction(k).products)        
             if active_reactions[self.nr+k] == 1:
                 species.update(self._gas.reaction(k).reactants)
-                species.update(self._gas.reaction(k).products)
+                species.update(self._gas.reaction(k).products)  
         return species
     
     
@@ -223,8 +221,11 @@ def find_active_reactions(ivar,impo,thr,scaled):
     if scaled:
         Imax = np.max(np.abs(impo[ivar]))
     else:
-        Imax = 1.0
-    active_reactions = [1 if np.abs(impo[ivar,k]) >= thr*Imax else 0 for k in range(impo.shape[1])]
+        Imax = 1.0   
+    active_reactions = np.zeros(impo.shape[1])
+    if Imax > 0: #protects against all-zeros ImpoIndex
+        active_reactions[impo[ivar] >= thr*Imax] = 1
+ 
     return active_reactions
 
 
