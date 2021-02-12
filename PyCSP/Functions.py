@@ -483,13 +483,13 @@ def CSPIndices_one_var(Proj_i, Smat, rvec):
     """Given the i-th row of the projector, computes 2Nr indexes of reactions to variable i.
     Proj_i must be a nv-long array. Returns a 2Nr-long array"""
     nr = Smat.shape[1]
-    Index = np.zeros((nr))
-    norm = 0.0
-    for k in range(nr):
-        Index[k] = np.dot(Proj_i,Smat[:,k]) * rvec[k]
-        norm = norm + abs(Index[k])
-    for k in range(nr):
-        Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
+    PS = np.matmul(Proj_i,Smat) 
+    Index = np.multiply(PS,rvec)
+    norm = np.sum(abs(Index))
+    if norm != 0.0:
+        Index = Index/norm
+    else:
+        Index = np.zeros((nr))
     #np.sum(abs(Index),axis=1) check: a n-long array of ones
     return Index
 

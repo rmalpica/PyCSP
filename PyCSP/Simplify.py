@@ -16,7 +16,7 @@ class CSPsimplify:
         self._nv = self._gas.n_species+1
         self.csprtol = 1e-2
         self.cspatol = 1e-8
-        self.scaled = False
+        self.scaled = True
         self.problemtype = 'constP'
         self.dataset = dataset
         self.targetset = {}
