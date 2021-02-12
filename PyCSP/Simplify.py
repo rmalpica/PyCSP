@@ -119,6 +119,8 @@ class CSPsimplify:
             raise ValueError("Need to process dataset first")
         if len(self.targetset) == 0:
             raise ValueError("Need to define targetset")
+        if threshold < 0 or threshold > 1:
+        	raise ValueError("Threshold must be between 0 and 1")
         lenData = self.dataset.shape[0] 
         all_active_species = [] 
         all_active_reacs = np.zeros((lenData,2*self.nr),dtype=int)
