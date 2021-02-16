@@ -179,8 +179,8 @@ def smart_timescale(tau,factor,M,lamM,dtold):
         dt = tau[M]*factor
     else:
         dt = tau[M-1] + factor*(tau[M]-tau[M-1])
-    if(lamM.real > 0):
-        dt = min(dt,1.5*dtold)
+    #if(lamM.real > 0):
+    dt = min(dt,1.5*dtold)
     return dt
         
        
