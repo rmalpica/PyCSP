@@ -438,7 +438,12 @@ def eigsys(jac):
     
 
     #compute left eigenvectors, amplitudes
-    Levec = np.linalg.inv(Revec)
+    try:
+        Levec = np.linalg.inv(Revec)
+    except:
+        print('Warning: looks like the R martrix is singular (rank[R] = %i).' %np.linalg.matrix_rank(Revec))
+        print('         Kernel is zeroed-out.')
+        return[np.zeros(len(jac)),np.zeros((len(jac),len(jac))),np.zeros((len(jac),len(jac)))]
     
     #transpose Revec
     Revec = np.transpose(Revec)
