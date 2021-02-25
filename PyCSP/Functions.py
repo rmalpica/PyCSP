@@ -275,6 +275,7 @@ class CanteraCSP(CanteraThermoKinetics):
         self._jac = self.jacobian.copy()
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
+        self.clean_conserved(evals)
         f = np.matmul(Levec,self.rhs)
         self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
@@ -292,6 +293,7 @@ class CanteraCSP(CanteraThermoKinetics):
         self._jac = self.jacKinetic().copy()       
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
+        self.clean_conserved(evals)
         f = np.matmul(Levec,self.rhs)
         self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
@@ -310,6 +312,7 @@ class CanteraCSP(CanteraThermoKinetics):
         self._jac = kineticjac - thermaljac
         #eigensystem
         evals,Revec,Levec = eigsys(self.jac)
+        self.clean_conserved(evals)
         f = np.matmul(Levec,self.rhs)
         self._nUpdates = self._nUpdates + 1
         #rotate eigenvectors such that amplitudes are positive    
@@ -317,6 +320,11 @@ class CanteraCSP(CanteraThermoKinetics):
         return[evals,Revec,Levec,f]
 
 
+    def clean_conserved(self,evals):
+        """Zero-out conserved modes eigenvalues"""
+        i = self.n_species-self.n_elements
+        evals[i:] = 0.0
+        
     
 """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
 """
@@ -415,7 +423,7 @@ def eigsys(jac):
     Both Revec (since it is transposed) and Levec (naturally) contain row vectors,
     such that an eigenvector can be retrieved using R/Levec[index,:] """
     
-    ncons = len(jac) - np.linalg.matrix_rank(jac)
+    #ncons = len(jac) - np.linalg.matrix_rank(jac)
     evals, Revec = np.linalg.eig(jac)
     
     #sort 
@@ -424,7 +432,7 @@ def eigsys(jac):
     Revec = Revec[:,idx]
     
     #zero-out conserved eigenvalues (last ncons)
-    evals[-ncons:] = 0.0
+    #evals[-ncons:] = 0.0
 
     #adjust complex conjugates
     cmplx = Revec.imag.any(axis=0)   #boolean indexing of complex eigenvectors (cols)
