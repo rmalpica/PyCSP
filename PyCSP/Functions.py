@@ -322,7 +322,7 @@ class CanteraCSP(CanteraThermoKinetics):
 
     def clean_conserved(self,evals):
         """Zero-out conserved modes eigenvalues"""
-        i = self.n_species-self.n_elements
+        i = self.nv-self.n_elements
         evals[i:] = 0.0
         
     
@@ -333,9 +333,8 @@ def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     nEl = n_elements 
     #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
     imPart = evals.imag!=0
-    nModes = nv - nEl
-    ewt = setEwt(stateYT,rtol,atol)
-    
+    nModes = nv - nEl   #removing conserved modes
+    ewt = setEwt(stateYT,rtol,atol)    
     delw = np.zeros(nv)
     for j in range(nModes-1):          #loop over eligible modes (last excluded)
         taujp1 = tau[j+1]              #timescale of next (slower) mode
