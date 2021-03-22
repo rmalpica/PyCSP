@@ -17,11 +17,14 @@ class CSPsimplify:
         self.csprtol = 1e-2
         self.cspatol = 1e-8
         self.scaled = True
+        self.TSRtargetset = False
+        self.TSRtol = 0.5
         self.problemtype = 'constP'
         self.dataset = dataset
-        self.targetset = {}
+        self.targetset = set()
         self.ImpoFast = []
         self.ImpoSlow = []
+        self.TSRAPI = []
         self.speciestype = []
  
     @property 
@@ -31,7 +34,15 @@ class CSPsimplify:
     @targetset.setter
     def targetset(self,items):
         self._targetset = items
-
+   
+    @property 
+    def TSRtargetset(self):
+        return self._TSRtargetset
+    
+    @TSRtargetset.setter
+    def TSRtargetset(self,value):
+        self._TSRtargetset = value
+        
     @property 
     def nv(self):
         return self._nv
@@ -99,6 +110,7 @@ class CSPsimplify:
         lenData = self.dataset.shape[0] 
         self.ImpoFast = np.zeros((lenData,self.nv,2*self.nr), dtype=float)
         self.ImpoSlow = np.zeros((lenData,self.nv,2*self.nr), dtype=float)
+        self.TSRAPI = np.zeros((lenData,2*self.nr), dtype=float)
         self.speciestype = np.zeros((lenData,self.nv), dtype=object)
         for idx in range(lenData):
             self._gas.Y = self.dataset[idx,:-2]
@@ -112,20 +124,26 @@ class CSPsimplify:
             self.ImpoFast[idx] = np.abs(ifast)
             self.ImpoSlow[idx] = np.abs(islow)
             self.speciestype[idx] = species_type
+            if(self.TSRtargetset): 
+                self.TSRAPI[idx] = np.abs(self._gas.calc_TSRindices(type='amplitude'))
 
         
     def simplify_mechanism(self, threshold):
         if len(self.ImpoFast) == 0:
             raise ValueError("Need to process dataset first")
-        if len(self.targetset) == 0:
+        if (len(self.targetset) == 0 and not self.TSRtargetset):
             raise ValueError("Need to define targetset")
         if threshold < 0 or threshold > 1:
-        	raise ValueError("Threshold must be between 0 and 1")
+            	raise ValueError("Threshold must be between 0 and 1")
         lenData = self.dataset.shape[0] 
         all_active_species = [] 
         all_active_reacs = np.zeros((lenData,2*self.nr),dtype=int)
         for idx in range(lenData): #loop over dataset points
             active_species = self.targetset.copy()
+            if self.TSRtargetset:
+                tsrtarget = self.get_tsrtarget(self.TSRAPI[idx],self.TSRtol)
+                active_species.update(tsrtarget)
+            #print(active_species)
             trace,fast,slow = self.get_species_sets(self.speciestype[idx])
             iter = 0            
             while True:
@@ -176,6 +194,22 @@ class CSPsimplify:
         return species, reactions
 
 
+    def get_tsrtarget(self,tsrapi,thr):
+        tpls = [i for i in sorted(enumerate(tsrapi), reverse=True, key=lambda x:x[1])]
+        sorted_api = [x[1] for x in tpls]
+        n = 1
+        for i in range(len(sorted_api)):
+            while sum(sorted_api[:i+1]) <= thr:
+                n = n + 1
+                break
+        tsrset = set()
+        for i in range(n):
+            k = tpls[i][0]
+            if k >= self.nr: k = k - self.nr               
+            tsrset.update(list(self._gas.reaction(k).reactants.keys()))
+            tsrset.update(list(self._gas.reaction(k).products.keys()))
+        return tsrset
+            
 
     def find_species_in_reactions(self, active_reactions):
         species = {}
