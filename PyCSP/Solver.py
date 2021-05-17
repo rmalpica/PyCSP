@@ -83,19 +83,23 @@ class CSPsolver:
     def factor(self,value):
         self._factor = value
         
-        
-    
+            
     def CSPcore(self,y):
         self._gas.set_stateYT(y)
         lam,A,B,f = self._gas.get_kernel()
-        M = self._gas.calc_exhausted_modes(rtol=self.csprtol, atol=self.cspatol)
         tau = cspF.timescales(lam)
-        return [A,B,f,lam,tau,M]
+        return [A,B,f,lam,tau]
     
-    def CSPcoreBasic(self,y):
+    
+    def CSPexhaustedModes(self,y,lam,A,B,tau,rtol,atol):
         self._gas.set_stateYT(y)
-        lam,A,B,f = self._gas.get_kernel()
-        return [A,B,f,lam]
+        f = np.matmul(B,self._gas.source)
+        M = cspF.findM(self._gas.n_elements,y,lam,A,tau,f,rtol,atol)
+        return M
+    
+    def CSPamplitudes(self,y,B):
+        f = np.matmul(B,self.rhs(y))
+        return f
     
     def rhs(self,y):
         self._gas.set_stateYT(y)
@@ -121,18 +125,24 @@ class CSPsolver:
         self._t = t0
     
     def integrate(self):
-        #calc CSP basis and projection matrix Qs in yold
+        #calc CSP basis in yold
         self._gas.jacobiantype = self.jacobiantype
         yold = self.y
-        A,B,f,lam,tau,M = self.CSPcore(yold)
-        self._M = M
-        self._Qs = QsMatrix(A,B,M)
+        A,B,f,lam,tau = self.CSPcore(yold)
+        #apply radical correction and advance to yman
+        self._Rc = RCorr(A,f,lam,self.M)
+        yman = self.radical_correction()
+        self._y = yman
+        #calc new M
+        self._M = self.CSPexhaustedModes(yman,lam,A,B,tau,self.csprtol,self.cspatol)
+        #calc Projection matrix with old basis and new M
+        self._Qs = QsMatrix(A,B,self.M)
         #advance in time dydt = Qsg with RK4 to ystar
-        self._dt = smart_timescale(tau,self.factor,self.M,lam[M],self.dt)
+        self._dt = smart_timescale(tau,self.factor,self.M,lam[self.M],self.dt)
         ystar = self.RK4csp()
-        #calc CSP basis and radical matrix Rc in ystar
+        #calc Rc in ystar
         self._y = ystar
-        A,B,f,lam = self.CSPcoreBasic(ystar)
+        f = self.CSPamplitudes(ystar,B)
         self._Rc = RCorr(A,f,lam,self.M)
         #apply radical correction and advance to ynew
         ynew = self.radical_correction()
