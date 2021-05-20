@@ -19,6 +19,7 @@ class CanteraThermoKinetics(ct.Solution):
         self._jacobian = []
         self._generalized_Stoich_matrix = []
         self._R_vector = []
+        self._jacobian_diagonal = []
 
 
     """ ~~~~~~~~~~~~ PROPERTIES ~~~~~~~~~~~~~
@@ -100,6 +101,16 @@ class CanteraThermoKinetics(ct.Solution):
     @property                    
     def R_vector(self):
         return self.Rates_vector()
+
+    @property
+    def jacobian_diagonal(self):
+        if (self.problemtype == 'const_p'):
+            return self.jacobian_diagonal_const_p()
+        elif (self.problemtype == 'const_v'):
+            return self.jacobian_diagonal_const_v()
+        else:
+            raise ValueError("Need to set either constP or constRho value")
+
 
     """ ~~~~~~~~~~~~ METHODS ~~~~~~~~~~~~~
     """
@@ -370,6 +381,67 @@ class CanteraThermoKinetics(ct.Solution):
         return JacK
     
     
+    def jacobian_diagonal_const_p(self):
+        """Computes (an approx. to) the diagonal of the numerical Jacobian.
+        Returns a N_s+1 array [diagjac]. Input must be an instance of the CSPCantera class"""
+        roundoff = np.finfo(float).eps
+        sro = np.sqrt(roundoff)
+        #setup the state vector
+        T = self.T
+        p = self.P
+        y = self.Y.copy()   #ns-long
+        ydot = self.rhs_const_p()   #ns+1-long (Y1,...,Yn,T)
+        
+        #create a jacobian vector
+        diagjac = np.zeros((self.n_species+1))
+        
+        #evaluate the Jacobian
+        dy = np.zeros(self.n_species)
+        dy = [max(sro*abs(y[i]),1e-8) for i in range(self.n_species)]
+        dT = max(sro*abs(T),1e-3)
+        self.set_unnormalized_mass_fractions(y+dy)
+        self.TP = T+dT,self.P
+        ydotp = self.rhs_const_p()
+        dydot = ydotp-ydot
+        diagjac[:-1] = dydot[:-1]/dy
+        diagjac[-1] = dydot[-1]/dT
+        
+        self.Y = y
+        self.TP = T,p
+           
+        return diagjac
+
+
+
+    def jacobian_diagonal_const_v(self):
+        """Computes (an approx. to) the diagonal of the numerical Jacobian.
+        Returns a N_s+1 [diagjac]. Input must be an instance of the CSPCantera class"""
+        roundoff = np.finfo(float).eps
+        sro = np.sqrt(roundoff)
+        #setup the state vector
+        T = self.T
+        rho = self.density
+        y = self.Y.copy()   #ns-long
+        ydot = self.rhs_const_v()   #ns+1-long (Y1,...,Yn,T)
+        
+        #create a jacobian vector
+        diagjac = np.zeros((self.n_species+1))
+        
+        #evaluate the Jacobian
+        dy = np.zeros(self.n_species)
+        dy = [max(sro*abs(y[i]),1e-8) for i in range(self.n_species)]
+        dT = max(sro*abs(T),1e-3)
+        self.set_unnormalized_mass_fractions(y+dy)
+        self.TD = T+dT,rho
+        ydotp = self.rhs_const_p()
+        dydot = ydotp-ydot
+        diagjac[:-1] = dydot[:-1]/dy
+        diagjac[-1] = dydot[-1]/dT
+        
+        self.Y = y
+        self.TD = T,rho
+           
+        return diagjac
     
     """ ~~~~~~~~~~~~ OTHER JAC FORMULATIONS ~~~~~~~~~~~~~
     """
