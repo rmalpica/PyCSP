@@ -27,12 +27,13 @@ def select_eval(evals,indexes):
 
 
 
-def reorder_evals(ev):
+def reorder_evals(ev,times):
     """    
 
     Parameters
     ----------
     evals : 2D numpy array containing a series of eigenvalues.
+    times : 1D numpy array containing the corresponding times
    
     Returns
     -------
@@ -40,30 +41,32 @@ def reorder_evals(ev):
 
 
     """
+
     evals = ev.real.copy()
+    evalsd = ev.real.copy()
+    img = ev.imag.copy()
     nstep = evals.shape[0]
     nv = evals.shape[1]
     delta = np.zeros(nv)
     mask = np.zeros((nstep,nv), dtype=np.int8)
     mask[0] = np.arange(nv)
+    mask[1] = np.arange(nv)
+
     
-    for l in range(nv):
-        chosen = evals[0,l]
-        prev = chosen
-        prevv = prev
-        for i in range(1,nstep):
-            if(i==1):
-                for j in range(nv):
-                    delta[j] = np.abs(prev-evals[i,j])
-            else:
-                for j in range(nv):
-                    delta[j] = np.abs(prevv - 2*prev + evals[i,j])
-            k = np.argmin(delta)
-            chosen = evals[i,k]
-            prevv = prev
-            prev = chosen
+    for i in range(2,nstep):
+        for l in range(nv):
+
+            f0 = evalsd[i-2,mask[i-2]]
+            f1 = evalsd[i-1,mask[i-1]]
+            h1 = times[i-1]-times[i-2]
+            h2 = times[i]-times[i-1]
+
+            for j in range(nv):
+                delta[j] = np.abs( 2* (h2*f0[l] - (h1+h2)*f1[l]  + h1*evals[i,j]) / ( h1*h2*(h1+h2))  )
+            k = np.argmin(delta) 
             mask[i,l] = k
             evals[i,k] = 1.0e+30
+    
     newev = np.zeros((nstep,nv),dtype=complex)
     for i in range(nstep):
             newev[i] = ev[i,mask[i]]
