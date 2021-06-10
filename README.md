@@ -23,3 +23,7 @@ Cantera chem-input files are required. Cantera offers a utility to convert chemk
 
 # Documentation
 Can be found in the /documentation folder
+
+# How to cite?
+- Malpica Galassi, R., Ciottoli, P. P., Sarathy, S. M., Im, H. G., Paolucci, S., & Valorani, M. (2018). Automated chemical kinetic mechanism simplification with minimal user expertise. Combustion and Flame, 197, 439–448. https://doi.org/10.1016/j.combustflame.2018.08.007
+- AlRamadan, A. S., Malpica Galassi, R., Ciottoli, P. P., Valorani, M., & Sarathy, S. M. (2020). Multi-stage heat release in lean combustion: Insights from coupled tangential stretching rate (TSR) and computational singular perturbation (CSP) analysis. Combustion and Flame, 219, 242–257. https://doi.org/10.1016/j.combustflame.2020.05.026
