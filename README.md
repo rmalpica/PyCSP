@@ -30,6 +30,7 @@ This code still doesn't have an associated publication. In addition to mentionin
 - AlRamadan, A. S., Malpica Galassi, R., Ciottoli, P. P., Valorani, M., & Sarathy, S. M. (2020). Multi-stage heat release in lean combustion: Insights from coupled tangential stretching rate (TSR) and computational singular perturbation (CSP) analysis. Combustion and Flame, 219, 242–257. https://doi.org/10.1016/j.combustflame.2020.05.026
 
 BibTex citation of this repository:
+```bibtex
 @misc{malpicagalassi2021pycsp,
     author = {Riccardo Malpica Galassi},
     title = {PyCSP - A collection of tools based on Computational Singular Perturbation for the analysis of chemically reacting systems.},
@@ -38,3 +39,4 @@ BibTex citation of this repository:
     journal = {GitHub repository},
     howpublished = {\url{https://github.com/rmalpica/PyCSP/}},
 }
+```
