@@ -1,0 +1,563 @@
+"""
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>!
+
+                     ----- CO/CH2O/CH3OH Mechanism -----
+
+ (c) Li, Zhao, Kazakov, Chaos, Dryer, and Scire; Princeton University, 2007.
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  HOW TO USE THIS MECHANISM:
+
+ (*) Due to limitations of CHEMKIN-II format (specifically, an inability to
+     implement temperature-dependent collision efficiencies in falloff
+     reactions) and the lack of fundamental understanding of the mixing rules
+     for the falloff reactions with the bath gases that have different
+     broadening factors, the present implementation represents a compromise
+     (approximate) formulation.  As a consequence,
+
+     PRIOR TO ITS USE IN THE CALCULATIONS, THIS FILE HAS TO BE MODIFIED.
+     DEPENDING ON WHAT BATH GAS (DILUTANT) IS MOST ABUNDANT IN YOUR SYSTEM
+     (THE PRESENT CHOICES ARE N2, AR, OR HE),  YOU  SHOULD UNCOMMENT THE
+     CORRESPONDING BLOCK FOR THE REACTION H+O2(+M)=HO2(+M), AND COMMENT THE
+     BLOCK FOR OTHER DILUTANT(S).  AS GIVEN, THE MAIN DILUTANT IS SET TO BE N2.
+
+
+  HOW TO REFERENCE THIS MECHANISM:
+
+     J. Li, Z. Zhao, A. Kazakov, M. Chaos, F.L. Dryer, J.J. Scire, Jr.
+        "A Comprehensive Kinetic Mechanism for CO, CH2O, CH3OH Combustion,"
+        Int. J. Chem. Kinet. 39 (2007) 109-136.
+
+
+  HOW TO CONTACT THE AUTHORS:
+
+     Prof. Frederick L. Dryer
+     D-329D Engineering Quadrangle
+     Mechanical and Aerospace Engineering
+     Princeton University
+     Princeton, NJ 08544-5263
+     Phone: 609-258-5206
+     Lab:   609-258-0316
+     FAX:   609-258-1939
+     Email: fldryer@Princeton.EDU
+
+     Dr. Marcos Chaos
+     D-329C Engineering Quadrangle
+     Mechanical and Aerospace Engineering
+     Princeton University
+     Princeton, NJ 08544-5263
+     Phone: 609-258-2947
+     Lab:   609-258-0316
+     FAX:   609-258-6109
+     Email: mchaos@Princeton.EDU
+
+
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>!
+
+ IMPORTANT NOTE:
+    The reaction CO+HO2=CO2+OH has recently received much attention and recent
+    publications point to a much lower rate than what has been commonly used
+    in kinetic models.  The present mechanism differs from our original
+    publication in that we have adopted the rate proposed by You et al. (2007)
+    his new rate improves predictions of ignition delay in RCM's and does not
+    affect the quality of other model predictions originally published.  Please
+    make this note if you publish any results using this mechanism.
+
+                                                        Marcos Chaos (2007)
+
+
+
+
+"""
+
+units(length='cm', time='s', quantity='mol', act_energy='cal/mol')
+
+ideal_gas(name='gas',
+          elements="C H O N",
+          species="""H     H2    O     OH    H2O   CO    HCO   O2    HO2
+                     H2O2  CO2   N2""",
+          reactions='all',
+          initial_state=state(temperature=300.0, pressure=OneAtm))
+
+#-------------------------------------------------------------------------------
+# Species data
+#-------------------------------------------------------------------------------
+
+species(name='H',
+        atoms='H:1',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 2.50000000E+00,  0.00000000E+00,  0.00000000E+00,
+                       0.00000000E+00,  0.00000000E+00,  2.54716300E+04,
+                      -4.60117600E-01]),
+                NASA([1000.00, 5000.00],
+                     [ 2.50000000E+00,  0.00000000E+00,  0.00000000E+00,
+                       0.00000000E+00,  0.00000000E+00,  2.54716300E+04,
+                      -4.60117600E-01])),
+        note='120186')
+
+species(name='H2',
+        atoms='H:2',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.29812400E+00,  8.24944200E-04, -8.14301500E-07,
+                      -9.47543400E-11,  4.13487200E-13, -1.01252100E+03,
+                      -3.29409400E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 2.99142300E+00,  7.00064400E-04, -5.63382900E-08,
+                      -9.23157800E-12,  1.58275200E-15, -8.35034000E+02,
+                      -1.35511000E+00])),
+        note='121286')
+
+species(name='O',
+        atoms='O:1',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 2.94642900E+00, -1.63816600E-03,  2.42103200E-06,
+                      -1.60284300E-09,  3.89069600E-13,  2.91476400E+04,
+                       2.96399500E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 2.54206000E+00, -2.75506200E-05, -3.10280300E-09,
+                       4.55106700E-12, -4.36805200E-16,  2.92308000E+04,
+                       4.92030800E+00])),
+        note='120186')
+
+species(name='OH',
+        atoms='H:1 O:1',
+        thermo=(NASA([200.00, 1000.00],
+                     [ 4.12530561E+00, -3.22544939E-03,  6.52764691E-06,
+                      -5.79853643E-09,  2.06237379E-12,  3.34630913E+03,
+                      -6.90432960E-01]),
+                NASA([1000.00, 6000.00],
+                     [ 2.86472886E+00,  1.05650448E-03, -2.59082758E-07,
+                       3.05218674E-11, -1.33195876E-15,  3.68362875E+03,
+                       5.70164073E+00])),
+        note='S9/01')
+
+species(name='H2O',
+        atoms='H:2 O:1',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.38684200E+00,  3.47498200E-03, -6.35469600E-06,
+                       6.96858100E-09, -2.50658800E-12, -3.02081100E+04,
+                       2.59023300E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 2.67214600E+00,  3.05629300E-03, -8.73026000E-07,
+                       1.20099600E-10, -6.39161800E-15, -2.98992100E+04,
+                       6.86281700E+00])),
+        note='20387')
+
+species(name='CO',
+        atoms='C:1 O:1',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.26245200E+00,  1.51194100E-03, -3.88175500E-06,
+                       5.58194400E-09, -2.47495100E-12, -1.43105400E+04,
+                       4.84889700E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 3.02507800E+00,  1.44268900E-03, -5.63082800E-07,
+                       1.01858100E-10, -6.91095200E-15, -1.42683500E+04,
+                       6.10821800E+00])),
+        note='121286')
+
+species(name='HCO',
+        atoms='C:1 H:1 O:1',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 2.89833000E+00,  6.19914700E-03, -9.62308400E-06,
+                       1.08982500E-08, -4.57488500E-12,  4.15992200E+03,
+                       8.98361400E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 3.55727100E+00,  3.34557300E-03, -1.33500600E-06,
+                       2.47057300E-10, -1.71385100E-14,  3.91632400E+03,
+                       5.55229900E+00])),
+        note='121286')
+
+species(name='O2',
+        atoms='O:2',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.21293600E+00,  1.12748600E-03, -5.75615000E-07,
+                       1.31387700E-09, -8.76855400E-13, -1.00524900E+03,
+                       6.03473800E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 3.69757800E+00,  6.13519700E-04, -1.25884200E-07,
+                       1.77528100E-11, -1.13643500E-15, -1.23393000E+03,
+                       3.18916600E+00])),
+        note='121386')
+
+species(name='HO2',
+        atoms='H:1 O:2',
+        thermo=(NASA([200.00, 1000.00],
+                     [ 4.30179801E+00, -4.74912051E-03,  2.11582891E-05,
+                      -2.42763894E-08,  9.29225124E-12,  2.94808040E+02,
+                       3.71666245E+00]),
+                NASA([1000.00, 3500.00],
+                     [ 4.01721090E+00,  2.23982013E-03, -6.33658150E-07,
+                       1.14246370E-10, -1.07908535E-14,  1.11856713E+02,
+                       3.78510215E+00])),
+        note='L5/89')
+
+species(name='H2O2',
+        atoms='H:2 O:2',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.38875400E+00,  6.56922600E-03, -1.48501300E-07,
+                      -4.62580600E-09,  2.47151500E-12, -1.76631500E+04,
+                       6.78536300E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 4.57316700E+00,  4.33613600E-03, -1.47468900E-06,
+                       2.34890400E-10, -1.43165400E-14, -1.80069600E+04,
+                       5.01137000E-01])),
+        note='120186')
+
+species(name='CO2',
+        atoms='C:1 O:2',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 2.27572500E+00,  9.92207200E-03, -1.04091100E-05,
+                       6.86668700E-09, -2.11728000E-12, -4.83731400E+04,
+                       1.01884900E+01]),
+                NASA([1000.00, 5000.00],
+                     [ 4.45362300E+00,  3.14016900E-03, -1.27841100E-06,
+                       2.39399700E-10, -1.66903300E-14, -4.89669600E+04,
+                      -9.55395900E-01])),
+        note='121286')
+
+species(name='N2',
+        atoms='N:2',
+        thermo=(NASA([300.00, 1000.00],
+                     [ 3.29867700E+00,  1.40824000E-03, -3.96322200E-06,
+                       5.64151500E-09, -2.44485500E-12, -1.02090000E+03,
+                       3.95037200E+00]),
+                NASA([1000.00, 5000.00],
+                     [ 2.92664000E+00,  1.48797700E-03, -5.68476100E-07,
+                       1.00970400E-10, -6.75335100E-15, -9.22797700E+02,
+                       5.98052800E+00])),
+        note='121286')
+
+#-------------------------------------------------------------------------------
+# Reaction data
+#-------------------------------------------------------------------------------
+#               H2/O2 mechanism of Li et al. IJCK 36:565 (2004)
+# *********************************************************************************
+# H2-O2 Chain Reactions
+#  Hessler, J. Phys. Chem. A, 102:4517 (1998)
+
+# Reaction 1
+reaction('H + O2 <=> O + OH', [3.547000e+15, -0.406, 16599.0])
+#  Sutherland et al., 21st Symposium, p. 929 (1986)
+
+# Reaction 2
+reaction('O + H2 <=> H + OH', [5.080000e+04, 2.67, 6290.0])
+#  Michael and Sutherland, J. Phys. Chem. 92:3853 (1988)
+
+# Reaction 3
+reaction('H2 + OH <=> H2O + H', [2.160000e+08, 1.51, 3430.0])
+#  Sutherland et al., 23rd Symposium, p. 51 (1990)
+
+# Reaction 4
+reaction('O + H2O <=> OH + OH', [2.970000e+06, 2.02, 13400.0])
+# H2-O2 Dissociation Reactions
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+
+# Reaction 5
+three_body_reaction('H2 + M <=> H + H + M', [4.577000e+19, -1.4, 104380.0],
+                    efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#    AR/0.0/ HE/0.0/
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+# H2+AR = H+H+AR                              5.840E+18 -1.10  1.0438E+05
+# H2+HE = H+H+HE                              5.840E+18 -1.10  1.0438E+05
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+
+# Reaction 6
+three_body_reaction('O + O + M <=> O2 + M', [6.165000e+15, -0.5, 0.0],
+                    efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#    AR/0.0/  HE/0.0/
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+# O+O+AR = O2+AR                              1.886E+13  0.00 -1.788E+03
+# O+O+HE = O2+HE                              1.886E+13  0.00 -1.788E+03
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+
+# Reaction 7
+three_body_reaction('O + H + M <=> OH + M', [4.714000e+18, -1.0, 0.0],
+                    efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#    AR/0.75/ HE/0.75/
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+#  H+OH+M = H2O+M             2.212E+22 -2.00  0.000E+00
+
+# Reaction 8
+three_body_reaction('H + OH + M <=> H2O + M', [3.800000e+22, -2.0, 0.0],
+                    efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#    AR/0.38/ HE/0.38/
+# Formation and Consumption of HO2
+#  Cobos et al., J. Phys. Chem. 89:342 (1985) for kinf
+#  Michael, et al., J. Phys. Chem. A, 106:5297 (2002) for k0
+# =================================================================================
+#  MAIN BATH GAS IS N2 (comment this reaction otherwise)
+
+# Reaction 9
+falloff_reaction('H + O2 (+ M) <=> HO2 (+ M)',
+                 kf=[1.475000e+12, 0.6, 0.0],
+                 kf0=[6.366000e+20, -1.72, 524.8],
+                 efficiencies='CO:1.9 CO2:3.8 H2:2.0 H2O:11.0 O2:0.78',
+                 falloff=Troe(A=0.8, T3=1e-30, T1=1e+30))
+# =================================================================================
+#  MAIN BATH GAS IS AR OR HE (comment this reaction otherwise)
+# H+O2(+M) = HO2(+M)                         1.475E+12  0.60  0.000E+00
+#    LOW/9.042E+19 -1.50  4.922E+02/
+#    TROE/0.5 1E-30  1E+30/
+#    H2/3.0/ H2O/16/ O2/1.1/ CO/2.7/ CO2/5.4/ HE/1.2/
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986) [modified]
+
+# Reaction 10
+reaction('HO2 + H <=> H2 + O2', [1.660000e+13, 0.0, 823.0])
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986) [modified]
+
+# Reaction 11
+reaction('HO2 + H <=> OH + OH', [7.079000e+13, 0.0, 295.0])
+#  Baulch et al., J. Phys. Chem. Ref Data, 21:411 (1992)
+
+# Reaction 12
+reaction('HO2 + O <=> O2 + OH', [3.250000e+13, 0.0, 0.0])
+#  Keyser, J. Phys. Chem. 92:1193 (1988)
+
+# Reaction 13
+reaction('HO2 + OH <=> H2O + O2', [2.890000e+13, 0.0, -497.0])
+# Formation and Consumption of H2O2
+#  Hippler et al., J. Chem. Phys. 93:1755 (1990)
+
+# Reaction 14
+reaction('HO2 + HO2 <=> H2O2 + O2', [4.200000e+14, 0.0, 11982.0],
+         options='duplicate')
+
+# Reaction 15
+reaction('HO2 + HO2 <=> H2O2 + O2', [1.300000e+11, 0.0, -1629.3],
+         options='duplicate')
+#  Brouwer et al., J. Chem. Phys. 86:6171 (1987) for kinf
+#  Warnatz, J. in Combustion chemistry (1984) for k0
+
+# Reaction 16
+falloff_reaction('H2O2 (+ M) <=> OH + OH (+ M)',
+                 kf=[2.951000e+14, 0.0, 48430.0],
+                 kf0=[1.202000e+17, 0.0, 45500.0],
+                 efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0',
+                 falloff=Troe(A=0.5, T3=1e-30, T1=1e+30))
+#    AR/0.64/ HE/0.64/
+#  Tsang and Hampson, J. Phys. Chem. Ref. Data, 15:1087 (1986)
+
+# Reaction 17
+reaction('H2O2 + H <=> H2O + OH', [2.410000e+13, 0.0, 3970.0])
+
+# Reaction 18
+reaction('H2O2 + H <=> HO2 + H2', [4.820000e+13, 0.0, 7950.0])
+
+# Reaction 19
+reaction('H2O2 + O <=> OH + HO2', [9.550000e+06, 2.0, 3970.0])
+#  Hippler and Troe, J. Chem. Phys. Lett. 192:333 (1992)
+
+# Reaction 20
+reaction('H2O2 + OH <=> HO2 + H2O', [1.000000e+12, 0.0, 0.0],
+         options='duplicate')
+
+# Reaction 21
+reaction('H2O2 + OH <=> HO2 + H2O', [5.800000e+14, 0.0, 9557.0],
+         options='duplicate')
+# ****************************  CO/HCO Reactions  *********************************
+#  Troe, 15th Symposium
+
+# Reaction 22
+falloff_reaction('CO + O (+ M) <=> CO2 (+ M)',
+                 kf=[1.800000e+10, 0.0, 2384.0],
+                 kf0=[1.550000e+24, -2.79, 4191.0],
+                 efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#  Fit of Westmoreland, AiChe J., 1986, rel. to N2 - Tim adjusted from MTA's
+#  rate constant, which was rel to Ar.
+#    AR/0.87/
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+
+# Reaction 23
+reaction('CO + O2 <=> CO2 + O', [2.530000e+12, 0.0, 47700.0])
+#  This rate constant is modified per an updated value for HO2+HO2=H2O2+OH
+# CO+HO2 = CO2+OH                             3.010E+13  0.00  2.300E+04
+# *************
+#  You et al. J Phys. Chem A 111 (2007) 4031
+#  This new rate is about a factor of 3 lower than what is presently used and
+#  agrees with recent conclusions based on RCM data.
+#  Implementing this rate yields excellent agreement against H2/CO RCM ignition
+#  data of Jackie Sung abd coworkers (see Chaos and Dryer, Combust. Sci. Tech.,
+#  2007, in press)
+
+# Reaction 24
+reaction('CO + HO2 <=> CO2 + OH', [1.570000e+05, 2.18, 17940.0])
+# *************
+#  (This study) least squares fit to available experimental results
+
+# Reaction 25
+reaction('CO + OH <=> CO2 + H', [2.229000e+05, 1.89, -1158.7])
+#  (This study) least squares fit to available experimental results
+
+# Reaction 26
+three_body_reaction('HCO + M <=> H + CO + M', [4.748500e+11, 0.659, 14874.0],
+                    efficiencies='CO:1.9 CO2:3.8 H2:2.5 H2O:12.0')
+#  Timonen et al., JPC, 92:651 (1988)
+
+# Reaction 27
+reaction('HCO + O2 <=> CO + HO2', [7.580000e+12, 0.0, 410.0])
+#  Timonen et al., JPC, 91:692 (1987)
+
+# Reaction 28
+reaction('HCO + H <=> CO + H2', [7.230000e+13, 0.0, 0.0])
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+
+# Reaction 29
+reaction('HCO + O <=> CO + OH', [3.020000e+13, 0.0, 0.0])
+
+# Reaction 30
+reaction('HCO + OH <=> CO + H2O', [3.020000e+13, 0.0, 0.0])
+#  All reactions from Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+
+# Reaction 31
+reaction('HCO + O <=> CO2 + H', [3.000000e+13, 0.0, 0.0])
+
+# Reaction 32
+reaction('HCO + HO2 <=> CO2 + OH + H', [3.000000e+13, 0.0, 0.0])
+
+# Reaction 33
+reaction('HCO + HCO <=> H2 + CO + CO', [3.000000e+12, 0.0, 0.0])
+# HCO+CH3 = CO+CH4                            1.200E+14  0.00  0.000E+00
+#  Glarborg et al's paper (C&F, 132:629, 2003)
+# HCO+HCO = CH2O+CO                           3.000E+13  0.00  0.000E+00
+# *****************************  CH2O Reactions  **********************************
+#  Friedrichs et al., IJCK 2004, 36, 157
+# CH2O+M = HCO+H+M                            3.300E+39 -6.30  9.990E+04
+#    H2/2.5/ H2O/12.0/ CO/1.9/ CO2/3.8/
+# AR/0.7/
+# CH2O+M = CO+H2+M                            3.100E+45 -8.00  9.751E+04
+#    H2/2.5/ H2O/12.0/ CO/1.9/ CO2/3.8/
+# AR/0.7/
+#  Irdam et al., IJCK 1993, 25, 285
+# CH2O+H = HCO+H2                             5.740E+07  1.90  2.7486E+03
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH2O+O = HCO+OH                             1.810E+13  0.00  3.080E+03
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH2O+OH = HCO+H2O                           3.430E+09  1.18 -4.470E+02
+#  Hidaka et al. Combust Flame 92:365 (1993)
+# CH2O+O2 = HCO+HO2                           1.230E+06  3.00  5.200E+04
+#  Eiteneer et al, JPC A, 1998, 102, 5196
+# CH2O+HO2 = HCO+H2O2                         4.110E+04  2.50  1.021E+04
+# Fischer et al. IJCK, 32:713 (2000)
+# CH2O+CH3 = HCO+CH4                          3.636E-06  5.42  9.980E+02
+# ******************************  CH4 Reactions  **********************************
+#  Slagle et al., JPC, 91:4375 (1987)
+# CH3+O = CH2O+H                              8.430E+13  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3+O2 = CH3O+O                             1.990E+18 -1.57  2.923E+04
+#  Scire et al. IJCK, 33:75 (2001)
+# CH3+O2 = CH2O+OH                            3.740E+11  0.00  1.4640E+04
+#  Jim Scire (Ph.D. thesis, 2002) only for 1000 K
+#  CH3+HO2 = CH3O+OH          1.480E+13  0.00  0.000E+00
+# Zhu and Lin (2001, J.Phys.Chem. A 105)
+#  CH3+HO2 = CH3O+OH          6.14244E+10  0.76 -2.325E+03  !1000-3000k
+#  CH3+HO2 = CH3O+OH          1.78853E+14 -0.24 -3.6167E+02 !300-1000k
+#  (This study) by modifing Zhu & Lin's to match Jim's value at 1000K
+# CH3+HO2 = CH3O+OH                           2.410E+10  0.76 -2.325E+03
+#  Walter et al. 23rd Symp. (Int.) Combust. p107 (1990)
+# CH3+CH3(+M) = C2H6(+M)                      9.214E+16 -1.17  6.358E+02
+#    LOW/1.135E+36 -5.246  1.705E+03/
+#    TROE/0.405 1120. 69.6 1.E+15/
+#    H2/2/ H2O/5/ CO/2/ CO2/3/
+#  GRI 1.2
+# CH3+H(+M) = CH4(+M)                         1.270E+16 -0.630 3.830E+02
+#    LOW  /  2.477E+33   -4.760   2440.00/
+#    TROE/  0.7830   74.00  2941.00  6964.00 /
+#    H2/2.0/ H2O/6.0/ CH4/2.0/ CO/1.5/ CO2/2.0/ C2H6/3.0/ AR/0.7/
+#  Schatz et al., JPC, 88:221 (1984)
+# CH4+H = CH3+H2                              5.470E+07  1.97  1.121E+04
+#  Klemm et al. 18th Symp. (Int) Combust. p785 (1981)
+# CH4+O = CH3+OH                              3.150E+12  0.50  1.029E+04
+#  Felder and Madronich, CST, 50:135 (1986)
+# CH4+OH = CH3+H2O                            5.720E+06  1.96  2.639E+03
+#  Scire et al. IJCK, 33:75 (2001)
+# CH3+HO2 = CH4+O2                            3.160E+12  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH4+HO2 = CH3+H2O2                          1.810E+11  0.00  1.858E+04
+# *******************************  CH2OH Reactions  *******************************
+#  Cribb et al. Combust Flame, 88:186 (1992)
+# CH2OH+M = CH2O+H+M                          1.000E+14  0.00  2.510E+04
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH2OH+H = CH2O+H2                           6.000E+12  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH2OH+H = CH3+OH                            9.635E+13  0.00  0.000E+00
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH2OH+O = CH2O+OH                           4.200E+13  0.00  0.000E+00
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH2OH+OH = CH2O+H2O                         2.400E+13  0.00  0.000E+00
+#  Grotheer et al., JPC, 92:4028 (1988)
+#  used in Norton and Dryer, IJCK, 22:219 (1990)
+#  However, they only used the high temperature portion of the fit. The high
+#  temperature portion alone is 75% of the total at 700K, 92.8% at 1000 K
+# CH2OH+O2 = CH2O+HO2                         2.410E+14  0.00  5.017E+03
+#    DUPLICATE
+# CH2OH+O2 = CH2O+HO2                         1.510E+15 -1.00  0.000E+00
+#    DUPLICATE
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH2OH+HO2 = CH2O+H2O2                       1.200E+13  0.00  0.000E+00
+#  (This study) by keeping the branching ratio if using Friedrichs et al. (2004) below
+# CH2OH+HCO = CH3OH+CO                        1.000E+13  0.00  0.000E+0
+#  Friedrichs et al. (IJCK, 2004, 36, 157)
+# CH2OH+HCO = CH2O+CH2O                       1.500E+13  0.00  0.000E+00
+# *** Ethylene glycol formation
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# 2CH2OH = CH3OH+CH2O                         3.000E+12  0.00  0.000E+00
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH2OH+CH3O = CH3OH+CH2O                     2.400E+13  0.00  0.000E+00
+# ******************************  CH3O Reactions  *********************************
+#  Page et al., JPC, 93:4404 (1989)
+# CH3O+M = CH2O+H+M                           8.300E+17 -1.20  1.550E+04 !MC Lin
+#  Wantuck et al., JPC, 91:4653 (1987)
+# CH3O+H = CH3+OH                             3.200E+13  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3O+O = CH2O+OH                            6.000E+12  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3O+OH = CH2O+H2O                          1.800E+13  0.00  0.000E+00
+#  Wantuck et al., JPC, 91:4653 (1987)
+# CH3O+O2 = CH2O+HO2                          9.033E+13  0.00  1.198E+04
+#    DUPLICATE
+# CH3O+O2 = CH2O+HO2                          2.200E+10  0.00  1.748E+03
+#    DUPLICATE
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3O+HO2 = CH2O+H2O2                        3.000E+11  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3O+CO = CH3+CO2                           1.600E+13  0.00  1.180E+04
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# CH3O+HCO = CH3OH+CO                         9.000E+13  0.00  0.000E+00
+#  Tsang and Hampson, JPC Ref. Data, 15:1087 (1986)
+# 2CH3O = CH3OH+CH2O                          6.000E+13  0.00  0.000E+00
+# ******************************  CH3OH Reactions  ********************************
+#  GRI-3.0
+#  OH+CH3(+M) = CH3OH(+M)                      2.790E+18 -1.43  1.330E+03
+#    LOW  /  4.000E+36   -5.920   3140.00/
+#    TROE/   .4120  195.0  5900.00  6394.00/
+#    H2/2.00/ H2O/6.00/ CH4/2.00/ CO/1.50/ CO2/2.00/ C2H6/3.00/
+# H+CH2OH(+M) = CH3OH(+M)                     1.055E+12  0.50  8.600E+01
+#    LOW  /  4.360E+31   -4.650   5080.00/
+#    TROE/   .600  100.00  90000.0  10000.0 /
+#    H2/2.00/ H2O/6.00/ CH4/2.00/ CO/1.50/ CO2/2.00/ C2H6/3.00/
+# H+CH3O(+M) = CH3OH(+M)                      2.430E+12  0.515 5.000E+01
+#    LOW  /  4.660E+41   -7.440   14080.0/
+#    TROE/   .700  100.00  90000.0 10000.00 /
+#    H2/2.00/ H2O/6.00/ CH4/2.00/ CO/1.50/ CO2/2.00/ C2H6/3.00/
+#  Warnatz, in Gardiner, Jr. Combustion chemistry (1984)
+# CH3OH+H = CH2OH+H2                          3.200E+13  0.00  6.095E+03
+# CH3OH+H = CH3O+H2                           8.000E+12  0.00  6.095E+03
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH3OH+O = CH2OH+OH                          3.880E+05  2.50  3.080E+03
+#  Bott and Cohen, IJCK, 23:1075 (1991) {356}
+# CH3OH+OH = CH3O+H2O                         1.000E+06  2.10  4.967E+02
+# CH3OH+OH = CH2OH+H2O                        7.100E+06  1.80 -5.960E+02
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH3OH+O2 = CH2OH+HO2                        2.050E+13  0.00  4.490E+04
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH3OH+HCO = CH2OH+CH2O                      9.635E+03  2.90  1.311E+04
+#  Cathonnet et al., J. Chim. Phys., 79:475 (1982)
+# CH3OH+HO2 = CH2OH+H2O2                      3.980E+13  0.00  1.940E+04
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH3OH+CH3 = CH2OH+CH4                       3.190E+01  3.17  7.172E+03
+#  Tsang, JPC Ref. Data, 16:471 (1987)
+# CH3O+CH3OH = CH3OH+CH2OH                    3.000E+11  0.00  4.060E+03
