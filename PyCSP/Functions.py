@@ -173,6 +173,7 @@ class CanteraCSP(CanteraThermoKinetics):
         If not provided, uses default or previously set values.
         The calculated value of M can be retrieved by passing
         the optional argument getM=True"""
+        getM = False
         useTPI = False
         rtol = self.rtol
         atol = self.atol
@@ -181,6 +182,8 @@ class CanteraCSP(CanteraThermoKinetics):
                 rtol = value
             elif (key == 'atol'): 
                 atol = value
+            elif (key == 'getM'): 
+                getM = value
             elif (key == 'type'): 
                 if(value == 'timescale'):
                     useTPI = True
@@ -202,7 +205,10 @@ class CanteraCSP(CanteraThermoKinetics):
         else:
             CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
         TSRind = TSR_participation_indices(TSRidx, CSPidx)
-        return TSRind
+        if getM:
+            return TSR, TSRind, M
+        else:
+            return TSR, TSRind
         
         
     def calc_CSPindices(self,**kwargs):
@@ -259,7 +265,104 @@ class CanteraCSP(CanteraThermoKinetics):
         else:
             return [API, TPI, Ifast, Islow, species_type]
         
+    def calc_extended_TSR(self,**kwargs):
+        """Computes number of Extended exhausted modes (Mext) and the extended TSR. 
+        Caller must provide either a diffusion rhs with the keywork rhs_diffYT
+        or a convection rhs with the keywork rhs_convYT, or both.
+        Optional arguments are rtol and atol for the calculation of Mext.
+        If not provided, uses default or previously set values.
+        The calculated value of Mext can be retrieved by passing
+        the optional argument getMext=True"""
+                        
+        if self.is_changed(): 
+            self.update_kernel()
+            self._changed = False
+        
+        nv=len(self.Revec)
+        getMext = False
+        rtol = self.rtol
+        atol = self.atol
+        rhs_convYT = np.zeros(nv)
+        rhs_diffYT = np.zeros(nv)
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            elif (key == 'getMext'): 
+                getMext = value
+            elif (key == 'conv'):
+                rhs_convYT = value
+            elif (key == 'diff'):
+                rhs_diffYT = value
+            else:
+                raise ValueError("unknown argument --> %s" %key)
+        if(len(rhs_convYT)!=nv):
+            raise ValueError("Check dimension of Convection rhs. Should be %d", nv)
+        if(len(rhs_diffYT)!=nv):
+            raise ValueError("Check dimension of Diffusion rhs. Should be %d", nv)
 
+            
+        Smat = self.generalized_Stoich_matrix
+        rvec = self.R_vector    
+        rhs_ext, h, Smat_ext, rvec_ext = add_transport(self.rhs,self.Levec,Smat,rvec,rhs_convYT,rhs_diffYT)
+        
+        Mext = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,h,rtol,atol)
+        TSR_ext, weights_ext = findTSR(self.n_elements,rhs_ext,self.evals,self.Revec,h,Mext)
+        if getMext:
+            return [TSR_ext, Mext]
+        else:
+            return TSR_ext
+
+    def calc_extended_TSRindices(self,**kwargs):
+        """Computes number of Extended exhausted modes (Mext), the extended TSR and its indices. 
+        Caller must provide either a diffusion rhs with the keywork rhs_diffYT
+        or a convection rhs with the keywork rhs_convYT, or both.
+        Other optional arguments are rtol and atol for the calculation of Mext.
+        If not provided, uses default or previously set values.
+        The calculated value of Mext can be retrieved by passing
+        the optional argument getMext=True"""
+        if self.is_changed(): 
+            self.update_kernel()
+            self._changed = False
+        getMext = False    
+        nv=len(self.Revec)
+        rtol = self.rtol
+        atol = self.atol
+        rhs_convYT = np.zeros(nv)
+        rhs_diffYT = np.zeros(nv)
+        for key, value in kwargs.items():
+            if (key == 'rtol'): 
+                rtol = value
+            elif (key == 'atol'): 
+                atol = value
+            elif (key == 'getMext'): 
+                getMext = value
+            elif (key == 'conv'):
+                rhs_convYT = value
+            elif (key == 'diff'):
+                rhs_diffYT = value
+            else:
+                raise ValueError("unknown argument --> %s" %key)
+        
+        if(len(rhs_convYT)!=nv):
+            raise ValueError("Check dimension of Convection rhs. Should be %d", nv)
+        if(len(rhs_diffYT)!=nv):
+            raise ValueError("Check dimension of Diffusion rhs. Should be %d", nv)
+            
+        Smat = self.generalized_Stoich_matrix
+        rvec = self.R_vector    
+        rhs_ext, h, Smat_ext, rvec_ext = add_transport(self.rhs,self.Levec,Smat,rvec,rhs_convYT,rhs_diffYT)
+        
+        Mext = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,h,rtol,atol)
+        TSR_ext, weights_ext = findTSR(self.n_elements,rhs_ext,self.evals,self.Revec,h,Mext)
+        TSRidx = TSRindices(weights_ext, self.evals)
+        CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat_ext, rvec_ext)
+        TSRind_ext = TSR_participation_indices(TSRidx, CSPidx)
+        if getMext:
+            return TSR_ext, TSRind_ext, Mext
+        else:
+            return TSR_ext, TSRind_ext
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
@@ -611,4 +714,29 @@ def CSPtiming(gas):
     print ('Time TPI indexes: %10.3e' %timeTPI)
     print ('Time class specs: %10.3e' %timeclassify)
     print ('*** all times in seconds')
+
+    
+"""  ~~~~~~~~~~~ EXTENDED FUNC ~~~~~~~~~~~~
+"""
+
+def add_transport(rhs,Levec,Smat,rvec,rhs_convYT,rhs_diffYT):
+    nv=len(Levec)
+    nr=Smat.shape[1]
+    rhs_ext = rhs + rhs_convYT + rhs_diffYT
+    h = np.matmul(Levec,rhs_ext)
+    Smat_ext = np.zeros((nv,nr+2*nv))    
+    Smat_ext[:,0:nr] = Smat
+    Smat_ext[:,nr:nr+nv] = np.eye(nv)
+    Smat_ext[:,nr+nv:nr+2*nv] = np.eye(nv)
+    rvec_ext = np.zeros((nr+2*nv))
+    rvec_ext[0:nr] = rvec
+    rvec_ext[nr:nr+nv] = rhs_convYT
+    rvec_ext[nr+nv:nr+2*nv] = rhs_diffYT
+    
+    #splitrhs_ext = np.dot(Smat_ext,rvec_ext)
+    #checksplitrhs = np.isclose(rhs_ext, splitrhs_ext, rtol=1e-6, atol=0, equal_nan=False)
+    #if(np.any(checksplitrhs == False)):
+    #    raise ValueError('Mismatch between numerical extended RHS and S.r')
+        
+    return rhs_ext, h, Smat_ext, rvec_ext 
     
