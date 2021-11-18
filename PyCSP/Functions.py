@@ -173,7 +173,7 @@ class CanteraCSP(CanteraThermoKinetics):
         If not provided, uses default or previously set values.
         The calculated value of M can be retrieved by passing
         the optional argument getM=True"""
-        getM = False
+        getTSR = False
         useTPI = False
         rtol = self.rtol
         atol = self.atol
@@ -183,7 +183,7 @@ class CanteraCSP(CanteraThermoKinetics):
             elif (key == 'atol'): 
                 atol = value
             elif (key == 'getM'): 
-                getM = value
+                getTSR = value
             elif (key == 'type'): 
                 if(value == 'timescale'):
                     useTPI = True
@@ -205,10 +205,10 @@ class CanteraCSP(CanteraThermoKinetics):
         else:
             CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
         TSRind = TSR_participation_indices(TSRidx, CSPidx)
-        if getM:
-            return TSR, TSRind, M
-        else:
+        if getTSR:
             return TSR, TSRind
+        else:
+            return TSRind
         
         
     def calc_CSPindices(self,**kwargs):
