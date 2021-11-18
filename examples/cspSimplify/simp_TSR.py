@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import PyCSP.Functions as csp
 import PyCSP.Simplify as simp
-
+from PyCSP.soln2ck import write
 
 #-------CREATE DATASET---------
 #create gas from original mechanism file hydrogen.cti
@@ -70,11 +70,13 @@ for i in range(len(thr)):
     simp = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics', species=species, reactions=reactions)
     if simp.species_names != prev_species:  #append only if different from previous one
         simp_mech.append(simp)
+        write(simp, output_filename='skeletal_N'+str(simp.n_species)+'.inp', skip_thermo=True, skip_transport=True)
         prev_species = simp.species_names
 
 nmech = len(simp_mech)
 print('%i mechanisms found' % (nmech))
 
+  
 all_states_simp = []
 for i in range(nmech):
     # Re-run the ignition problem with the simplified mechanisms
