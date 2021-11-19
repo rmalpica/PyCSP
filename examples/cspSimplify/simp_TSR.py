@@ -97,7 +97,7 @@ for i in range(nmech):
 
 C = [np.random.choice(list(clr.CSS4_COLORS.values())) for i in range(nmech)] 
 fig, ax = plt.subplots(figsize=(6,4))
-ax.plot(states.t, states.T, lw=2, color='b', label='Detailed')
+ax.plot(states.t, states.T, lw=3, color='b', linestyle='--', label='Detailed')
 for i in range(nmech):
     ax.plot(all_states_simp[i].t, all_states_simp[i].T, lw=2, color = C[i],
          label='M#{0}, Ns={1}, Nr={2}'.format(i, simp_mech[i].n_species, simp_mech[i].n_reactions))
