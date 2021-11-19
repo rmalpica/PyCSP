@@ -182,7 +182,7 @@ class CanteraCSP(CanteraThermoKinetics):
                 rtol = value
             elif (key == 'atol'): 
                 atol = value
-            elif (key == 'getM'): 
+            elif (key == 'getTSR'): 
                 getTSR = value
             elif (key == 'type'): 
                 if(value == 'timescale'):
@@ -325,7 +325,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if self.is_changed(): 
             self.update_kernel()
             self._changed = False
-        getMext = False    
+        getTSRext = False    
         nv=len(self.Revec)
         rtol = self.rtol
         atol = self.atol
@@ -336,8 +336,8 @@ class CanteraCSP(CanteraThermoKinetics):
                 rtol = value
             elif (key == 'atol'): 
                 atol = value
-            elif (key == 'getMext'): 
-                getMext = value
+            elif (key == 'getTSRext'): 
+                getTSRext = value
             elif (key == 'conv'):
                 rhs_convYT = value
             elif (key == 'diff'):
@@ -359,10 +359,10 @@ class CanteraCSP(CanteraThermoKinetics):
         TSRidx = TSRindices(weights_ext, self.evals)
         CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat_ext, rvec_ext)
         TSRind_ext = TSR_participation_indices(TSRidx, CSPidx)
-        if getMext:
-            return TSR_ext, TSRind_ext, Mext
-        else:
+        if getTSRext:
             return TSR_ext, TSRind_ext
+        else:
+            return TSRind_ext
         
 
         """ ~~~~~~~~~~~~ KERNEL ~~~~~~~~~~~~~
