@@ -6,7 +6,10 @@ Created on Wed Dec 23 17:51:37 2020
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
 
+import cantera as ct
 import numpy as np
+import PyCSP.Functions as csp
+
 
 def select_eval(evals,indexes):
     """    
@@ -71,3 +74,48 @@ def reorder_evals(ev,times):
     for i in range(nstep):
             newev[i] = ev[i,mask[i]]
     return newev, mask
+
+
+def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
+
+    #set the gas state
+    T = temperature
+    P = pressure
+    gas.TP = T, P
+    gas.constP = P
+    gas.set_equivalence_ratio(eqratio,FuComp,OxComp)
+    
+    
+    #integrate ODE
+    r = ct.IdealGasConstPressureReactor(gas)
+    sim = ct.ReactorNet([r])
+    states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
+    
+    sim.set_initial_time(0.0)
+    while sim.time < tend:
+        sim.step()
+        states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
+    return states
+
+
+def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
+
+    #set the gas state
+    T = temperature
+    P = pressure
+    gas.TP = T, P
+    rho = gas.density
+    gas.constRho = rho
+    gas.set_equivalence_ratio(eqratio,FuComp,OxComp)
+    
+    
+    #integrate ODE
+    r = ct.IdealGasConstPressureReactor(gas)
+    sim = ct.ReactorNet([r])
+    states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
+    
+    sim.set_initial_time(0.0)
+    while sim.time < tend:
+        sim.step()
+        states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
+    return states
