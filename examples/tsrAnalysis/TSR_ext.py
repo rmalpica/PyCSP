@@ -76,7 +76,7 @@ for step in range(beginslice,endslice):
     rhsdiffYT = np.append(diffY[step],diffTemp[step])
     gas.set_stateYT(stateYT)
     gas.update_kernel()
-    omegatauext, api = gas.calc_extended_TSRindices(diff=rhsdiffYT)
+    omegatauext, api = gas.calc_extended_TSRindices(diff=rhsdiffYT, getTSRext=True)
 
     TSRAPI.append(api)
 
