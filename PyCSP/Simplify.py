@@ -26,6 +26,7 @@ class CSPsimplify:
         self.ImpoSlow = []
         self.TSRAPI = []
         self.speciestype = []
+        self.verbose = False
  
     @property 
     def targetset(self):
@@ -84,7 +85,14 @@ class CSPsimplify:
         else:
             raise ValueError("Invalid problem type --> %s" %value)
 
-
+    @property 
+    def verbose(self):
+        return self._verbose
+    
+    @verbose.setter
+    def verbose(self,value):
+        self._verbose = value
+        
     
     def dataset_info(self):
         import time
@@ -113,6 +121,7 @@ class CSPsimplify:
         self.TSRAPI = np.zeros((lenData,2*self.nr), dtype=float)
         self.speciestype = np.zeros((lenData,self.nv), dtype=object)
         for idx in range(lenData):
+            if(self.verbose): print("processing state %i ..." %idx)
             self._gas.Y = self.dataset[idx,:-2]
             self._gas.TP = self.dataset[idx,-2],self.dataset[idx,-1]
             if (self.problemtype == 'constP'):
@@ -138,10 +147,13 @@ class CSPsimplify:
         lenData = self.dataset.shape[0] 
         all_active_species = [] 
         all_active_reacs = np.zeros((lenData,2*self.nr),dtype=int)
-        for idx in range(lenData): #loop over dataset points
+        #loop over dataset points
+        for idx in range(lenData): 
+            if(self.verbose): print("finding active species in state %i ..." %idx) 
             active_species = self.targetset.copy()
             if self.TSRtargetset:
                 tsrtarget = self.get_tsrtarget(self.TSRAPI[idx],self.TSRtol)
+                if(self.verbose): print( "TSR-target set = "+str(tsrtarget) )
                 active_species.update(tsrtarget)
             #print(active_species)
             trace,fast,slow = self.get_species_sets(self.speciestype[idx])
@@ -170,8 +182,7 @@ class CSPsimplify:
                 #remove trace species
                 active_species.difference_update(trace)
                 
-                #print('after cleaning traces')
-                #print(active_species)
+                if(self.verbose): print( "active species = "+str(active_species) )
                                 
                 iter = iter + 1
                 if active_species == previous_active:
@@ -197,6 +208,8 @@ class CSPsimplify:
     def get_tsrtarget(self,tsrapi,thr):
         tpls = [i for i in sorted(enumerate(tsrapi), reverse=True, key=lambda x:x[1])]
         sorted_api = [x[1] for x in tpls]
+        if(sum(sorted_api)==0.0):             
+            return set()
         n = 1
         for i in range(len(sorted_api)):
             while sum(sorted_api[:i+1]) <= thr:
