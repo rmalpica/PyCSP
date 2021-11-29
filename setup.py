@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PyCSP", 
-    version="0.0.3",
+    version="1.1.1",
     author="Riccardo Malpica Galassi",
     author_email="riccardo.malpicagalassi@uniroma1.it",
     description="A collection of tools for the Computational Singular Perturbation analysis of chemically reacting flows",
