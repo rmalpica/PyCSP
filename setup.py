@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PyCSP", 
-    version="1.1.1",
+    version="1.2.0",
     author="Riccardo Malpica Galassi",
     author_email="riccardo.malpicagalassi@uniroma1.it",
     description="A collection of tools for the Computational Singular Perturbation analysis of chemically reacting flows",
@@ -18,8 +18,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.0.*,<3.7',
+    python_requires='>=3.0.*',
     install_requires=[
-          "Cantera==2.4.0","numpy","matplotlib",
+          "Cantera>=2.4.0","numpy","matplotlib",
       ],
 )

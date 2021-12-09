@@ -26,6 +26,8 @@ gas.jacobiantype = 'full'
 #integrate ODE
 r = ct.IdealGasConstPressureReactor(gas)
 sim = ct.ReactorNet([r])
+sim.rtol=1.0e-12
+sim.atol=1.0e-14
 time = 0.0
 states = ct.SolutionArray(gas, extra=['t'])
 
@@ -139,11 +141,11 @@ print('plotting mode amplitudes...')
 fig, ax = plt.subplots(figsize=(6,4))
 for idx in range(fvec.shape[1]):
     #color = next(ax._get_lines.prop_cycler)['color']
-    ax.plot(states.t, np.log10(1e-10+fvec[:,idx]), label='Mode %d' %(idx+1), marker='.', markersize = 2,linestyle = 'None')
+    ax.plot(np.log10(1e-10+fvec[:,idx]), label='Mode %d' %(idx+1), marker='.', markersize = 2,linestyle = 'None')
 ax.set_xlabel('time (s)')
 ax.set_ylabel('Amplitude')
 ax.set_ylim([-8, 10])
-ax.set_xlim([0., 0.001])
+#ax.set_xlim([0., 0.001])
 ax.grid(False)
 ax.legend()
 plt.show(block = False)
