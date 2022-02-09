@@ -22,22 +22,22 @@ dtl_mech = csp.CanteraCSP('gri30.cti')
 
 T_list = [1000]
 phi_list = [1.0]
-P = ct.one_atm
-nTemp = len(T_list)
-nPhi = len(phi_list)
+P_list = [ct.one_atm]
 
 
 states_db = []
 for eqratio in phi_list:
     for temperature in T_list:
+        for pressure in P_list:
             # Re-run the ignition problem with the detailed mechanisms
-            states = utils.integrate_batch_constP(dtl_mech,temperature,P,eqratio,FuComp,OxComp,1000)            
+            states = utils.integrate_batch_constP(dtl_mech,temperature,pressure,eqratio,FuComp,OxComp,1000)            
             states_db.append(states)
 
 allT = np.concatenate([states_db[i].T for i in range(len(states_db))]) 
-allY = np.concatenate([states_db[i].Y for i in range(len(states_db))])          
+allY = np.concatenate([states_db[i].Y for i in range(len(states_db))]) 
+allP = np.concatenate([states_db[i].P for i in range(len(states_db))])          
 
-dataset = np.concatenate((states.Y,states.T[:,np.newaxis],states.P[:,np.newaxis]),axis=1)
+dataset = np.concatenate((allY,allT[:,np.newaxis],allP[:,np.newaxis]),axis=1)
 print('Dataset created, start processing...')
 
 #coarsen dataset (to speed up)
