@@ -197,7 +197,7 @@ class CSPsimplify:
         
         
         #recovery: grab all the reactions containing active species
-        reactions = self.find_reactions_given_species(species)
+        reactions = find_reactions_given_species(self._gas,species)
         species = [self._gas.species(name) for name in species]  #convert to species object
 
         print('@threshold: %1.3f, Simplified mechanism contains %i species and %i reactions' % (threshold, len(species), len(reactions)))
@@ -257,15 +257,14 @@ class CSPsimplify:
         return reactions
             
     
-    def find_reactions_given_species(self,species):
-        reactions = []
-        for k in range(self.nr):
-            if set(self._gas.reaction(k).reactants.keys()).issubset(species) and set(self._gas.reaction(k).products.keys()).issubset(species):
-                reactions.append(self._gas.reaction(k)) 
-        return reactions
+def find_reactions_given_species(gas,species):
+    reactions = []
+    for k in range(gas.n_reactions):
+        if set(gas.reaction(k).reactants.keys()).issubset(species) and set(gas.reaction(k).products.keys()).issubset(species):
+            reactions.append(gas.reaction(k)) 
+    return reactions
             
-                
-    
+                    
 def find_active_reactions(ivar,impo,thr,scaled):
     if scaled:
         Imax = np.max(np.abs(impo[ivar]))
@@ -278,4 +277,35 @@ def find_active_reactions(ivar,impo,thr,scaled):
     return active_reactions
 
 
-            
+def merge_mechanisms(gasdtl,species1,species2):
+    """
+    
+    Parameters
+    ----------
+    gasdtl : Cantera's Solution object
+        Cantera's Solution object of the detailed mechanism.
+    species1 : Python List 
+        List object containing the species of first mech, e.g. mech.species_names.
+    species2 : Python List
+        List object containing the species of first mech, e.g. mech.species_names.
+
+    Returns
+    -------
+    species : Python List
+        List of the species of the merged mechanism.
+    reactions : Python List
+        List of the reactions of the merged mechanism..
+
+    """
+    mech1 = set(species1)
+    mech2 = set(species2)
+    species = set.union(mech1,mech2)    
+    #recovery: grab all the reactions containing active species
+    reactions = find_reactions_given_species(gasdtl,species)
+    species = [gasdtl.species(name) for name in species]  #convert to species object
+
+    print('Merged mechanism contains %i species and %i reactions' % (len(species), len(reactions)))
+
+    return species, reactions
+
+        
