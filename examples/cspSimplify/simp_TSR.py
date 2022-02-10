@@ -6,7 +6,6 @@ import os
 import cantera as ct
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as clr
 import PyCSP.Functions as csp
 import PyCSP.Simplify as simp
 import PyCSP.utils as utils
@@ -41,7 +40,7 @@ dataset = np.concatenate((allY,allT[:,np.newaxis],allP[:,np.newaxis]),axis=1)
 print('Dataset created, start processing...')
 
 #coarsen dataset (to speed up)
-dataset = dataset[::64]
+dataset = dataset[::32]
 print('Number of states in dataset: %i' %len(dataset))
 
 #init simplifier
@@ -96,6 +95,7 @@ print('%i mechanisms found' % len(simp_mech))
 
 T_list = np.arange(1000,1800,100)
 phi_list = [0.5, 0.7, 1.0, 1.2, 1.5]
+P = ct.one_atm
 
 nTemp = len(T_list)
 nPhi = len(phi_list)
@@ -105,13 +105,13 @@ all_idt_dtl = []
 all_equi_dtl = []
 for eqratio in phi_list:
     for temperature in T_list:
-            # Re-run the ignition problem with the detailed mechanisms
-            states = utils.integrate_batch_constP(dtl_mech,temperature,P,eqratio,FuComp,OxComp,1000)            
-            idt = states.t[states.rhsT.argmax()]
-            equi = states.T[-1]
-            all_states_dtl.append(states)
-            all_idt_dtl.append(idt)
-            all_equi_dtl.append(equi)
+        # Re-run the ignition problem with the detailed mechanisms
+        states = utils.integrate_batch_constP(dtl_mech,temperature,P,eqratio,FuComp,OxComp,1000)            
+        idt = states.t[states.rhsT.argmax()]
+        equi = states.T[-1]
+        all_states_dtl.append(states)
+        all_idt_dtl.append(idt)
+        all_equi_dtl.append(equi)
 
   
 all_states_simp = []
