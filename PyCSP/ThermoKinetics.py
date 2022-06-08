@@ -464,6 +464,37 @@ class CanteraThermoKinetics(ct.Solution):
         return jacKinetic
 
 
+    def jacSIM(self,Jac,major_ind,Levec):
+        nv = len(Jac)
+        n = len(major_ind)
+        m = nv - n
+       
+        tot=[*range(0, nv, 1)]
+        minor_ind = list(set(tot) - set(major_ind)) + list(set(major_ind) - set(tot))
+        mask = minor_ind + major_ind
+        #print(mask)
+        sortedJac = Jac[mask][:,mask]
+        
+        # Build Jacobian constrained to SIM 
+    
+        #First term: dg_i/du_j (n-by-n)    
+        mat1 = sortedJac[m:nv,m:nv]
+        
+        #Second term: dg_i/dv_alpha (n-by-m)
+        mat2 = sortedJac[m:nv,0:m]
+   
+        #Third term: (m-by-m) inverse of mat3 = b^i * dg/dx_j  where j spans the fast variables
+        mat3inv=np.linalg.inv( np.matmul(Levec[0:m],Jac[:][:,mask][:,0:m]) )  
+    
+        #Fourth term: (m-by-(n-m)) matrix of b^i * dg/dx_k  where k spans the slow variables
+        mat4 = np.matmul(Levec[0:m],Jac[:][:,mask][:,m:nv])
+       
+        # Constrained  (to SIM) jacobian: mat1 - mat2*mat3inv*mat4
+        jacSIM = mat1 - np.matmul(mat2,np.matmul(mat3inv,mat4))
+    
+        return jacSIM
+    
+    
     """ ~~~~~~~~~~~~ REAC NAMES ~~~~~~~~~~~~~
     """     
     def reaction_names(self):

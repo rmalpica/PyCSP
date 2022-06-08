@@ -21,6 +21,7 @@ class CanteraCSP(CanteraThermoKinetics):
         self._Levec = []
         self._f = []
         self._tau = []
+        self._classify_traces = True
         self._nUpdates = 0
         self._changed = False
     
@@ -82,6 +83,14 @@ class CanteraCSP(CanteraThermoKinetics):
     @property
     def tau(self):
         return self._tau
+    
+    @property
+    def classify_traces(self):
+        return self._classify_traces
+          
+    @classify_traces.setter
+    def classify_traces(self,value):
+        self._classify_traces = value
     
     @property
     def nUpdates(self):
@@ -256,7 +265,7 @@ class CanteraCSP(CanteraThermoKinetics):
         if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec,self.Levec,M,Smat,rvec)
         if getspeciestype: 
             pointers = CSP_pointers(self.Revec,self.Levec)
-            species_type = classify_species(self.stateYT(), self.rhs, pointers, M)
+            species_type = classify_species(self.stateYT(), self.rhs, pointers, M, self.classify_traces)
         if getTPI:
             JacK = self.jac_contribution()
             TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
@@ -627,7 +636,7 @@ def CSP_pointers(A,B):
     pointers = np.array([[np.transpose(A)[spec,mode]*B[mode,spec] for spec in range(nv)] for mode in range(nv)])            
     return pointers
 
-def classify_species(stateYT, rhs, pointers, M):
+def classify_species(stateYT, rhs, pointers, M, trace):
     """species classification
     """
     n = len(stateYT)
@@ -637,8 +646,9 @@ def classify_species(stateYT, rhs, pointers, M):
     species_type = np.full(n,'slow',dtype=object)
     species_type[sort[0:M]] = 'fast'
     species_type[-1] = 'slow'  #temperature is always slow
-    for i in range(n-1):
-        if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace'
+    if trace:
+        for i in range(n-1):
+            if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace'
     return species_type
         
 def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):
