@@ -46,14 +46,4 @@ author = {Riccardo {Malpica Galassi}}
 }
 
 ```
-BibTex citation of this repository:
-```bibtex
-@misc{malpicagalassi2021pycsp,
-    author = {Riccardo Malpica Galassi},
-    title = {PyCSP - A collection of tools based on Computational Singular Perturbation for the analysis of chemically reacting systems.},
-    year = {2021},
-    publisher = {GitHub},
-    journal = {GitHub repository},
-    howpublished = {\url{https://github.com/rmalpica/PyCSP/}},
-}
-```
+
