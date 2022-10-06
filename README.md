@@ -24,6 +24,9 @@ Cantera chem-input files are required. Cantera offers a utility to convert chemk
 
 FluidFoam (https://github.com/fluiddyn/fluidfoam) is suggested as a direct interface with openFOAM data.
 
+# Warning
+Datasets in the tsrAnalysis example folder are quite heavy. Due to limited github bandwidth, it may happen that "flamelet_state.dat" and "flamelet_rhsDiff.dat" are not correctly checked out. In that case, please write me an e-mail. I will send you the files.
+
 # Documentation
 Can be found in the /documentation folder
 
