@@ -22,6 +22,7 @@ class CanteraCSP(CanteraThermoKinetics):
         self._f = []
         self._tau = []
         self._classify_traces = True
+        self._index_norm = 'abs'
         self._nUpdates = 0
         self._changed = False
     
@@ -91,6 +92,17 @@ class CanteraCSP(CanteraThermoKinetics):
     @classify_traces.setter
     def classify_traces(self,value):
         self._classify_traces = value
+        
+    @property
+    def index_norm(self):
+        return self._index_norm
+          
+    @index_norm.setter
+    def index_norm(self,value):
+        if value == 'abs' or value == 'none':  
+            self._index_norm = value
+        else:
+            raise ValueError("Invalid index_norm --> %s" %value)
     
     @property
     def nUpdates(self):
@@ -210,10 +222,10 @@ class CanteraCSP(CanteraThermoKinetics):
         TSRidx = TSRindices(weights, self.evals)
         if (useTPI):
             JacK = self.jac_contribution()
-            CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
+            CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm)
         else:
-            CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
-        TSRind = TSR_participation_indices(TSRidx, CSPidx)
+            CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm)
+        TSRind = TSR_participation_indices(TSRidx, CSPidx, self.index_norm)
         if getTSR:
             return TSR, TSRind
         else:
@@ -261,14 +273,14 @@ class CanteraCSP(CanteraThermoKinetics):
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector
-        if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec)
-        if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec,self.Levec,M,Smat,rvec)
+        if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm)
+        if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec, self.Levec, M, Smat, rvec, self.index_norm)
         if getspeciestype: 
             pointers = CSP_pointers(self.Revec,self.Levec)
             species_type = classify_species(self.stateYT(), self.rhs, pointers, M, self.classify_traces)
         if getTPI:
             JacK = self.jac_contribution()
-            TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec)
+            TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm)
         if getM:
             return [API, TPI, Ifast, Islow, species_type, M]
         else:
@@ -366,8 +378,8 @@ class CanteraCSP(CanteraThermoKinetics):
         Mext = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,h,rtol,atol)
         TSR_ext, weights_ext = findTSR(self.n_elements,rhs_ext,self.evals,self.Revec,h,Mext)
         TSRidx = TSRindices(weights_ext, self.evals)
-        CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat_ext, rvec_ext)
-        TSRind_ext = TSR_participation_indices(TSRidx, CSPidx)
+        CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat_ext, rvec_ext, self.index_norm)
+        TSRind_ext = TSR_participation_indices(TSRidx, CSPidx, self.index_norm)
         if getTSRext:
             return TSR_ext, TSRind_ext
         else:
@@ -518,11 +530,12 @@ def TSRindices(weights, evals):
         Index[i] = Index[i]/norm if norm > 1e-10 else 0.0
     return Index
 
-def TSR_participation_indices(TSRidx, CSPidx):
+def TSR_participation_indices(TSRidx, CSPidx, normtype):
     """2Nr array containing participation index of reaction k to TSR"""
     Index = np.matmul(np.transpose(CSPidx),np.abs(TSRidx))
-    norm = np.sum(np.abs(Index))
-    Index = Index/norm if norm > 0 else Index*0.0
+    if normtype == 'abs':
+        norm = np.sum(np.abs(Index))
+        Index = Index/norm if norm > 0 else Index*0.0
     return Index
     
     
@@ -592,43 +605,44 @@ def timescales(evals):
 """ ~~~~~~~~~~~~ INDEXES FUNC ~~~~~~~~~~~~~
 """
 
-def CSPIndices(Proj, Smat, rvec):
+def CSPIndices(Proj, Smat, rvec, normtype):
     """Returns a Nv x 2Nr matrix of indexes, computed as Proj S r """
     ns = Smat.shape[0]
     nr = Smat.shape[1]
     Index = np.zeros((ns,nr))
     for i in range(ns):
         Proj_i = Proj[i,:]
-        Index[i,:] = CSPIndices_one_var(Proj_i, Smat, rvec)
+        Index[i,:] = CSPIndices_one_var(Proj_i, Smat, rvec, normtype)
     #np.sum(abs(Index),axis=1) check: a n-long array of ones
     return Index
 
-def CSPIndices_one_var(Proj_i, Smat, rvec):
+def CSPIndices_one_var(Proj_i, Smat, rvec, normtype):
     """Given the i-th row of the projector, computes 2Nr indexes of reactions to variable i.
     Proj_i must be a nv-long array. Returns a 2Nr-long array"""
     nr = Smat.shape[1]
     PS = np.matmul(Proj_i,Smat) 
     Index = np.multiply(PS,rvec)
-    norm = np.sum(abs(Index))
-    if norm != 0.0:
-        Index = Index/norm
-    else:
-        Index = np.zeros((nr))
-    #np.sum(abs(Index),axis=1) check: a n-long array of ones
+    if normtype == 'abs':
+        norm = np.sum(abs(Index))
+        if norm != 0.0:
+            Index = Index/norm
+        else:
+            Index = np.zeros((nr))
+        #np.sum(abs(Index),axis=1) check: a n-long array of ones
     return Index
 
 
-def CSP_amplitude_participation_indices(B, Smat, rvec):
+def CSP_amplitude_participation_indices(B, Smat, rvec, normtype):
     """Ns x 2Nr array containing participation index of reaction k to variable i"""
-    API = CSPIndices(B, Smat, rvec)
+    API = CSPIndices(B, Smat, rvec, normtype)
     return API
 
-def CSP_importance_indices(A,B,M,Smat,rvec):
+def CSP_importance_indices(A, B, M, Smat, rvec, normtype):
     """Ns x 2Nr array containing fast/slow importance index of reaction k to variable i"""
     fastProj = np.matmul(np.transpose(A[0:M]),B[0:M])
-    Ifast = CSPIndices(fastProj, Smat, rvec)
+    Ifast = CSPIndices(fastProj, Smat, rvec, normtype)
     slowProj = np.matmul(np.transpose(A[M:]),B[M:])
-    Islow = CSPIndices(slowProj, Smat, rvec)      
+    Islow = CSPIndices(slowProj, Smat, rvec, normtype)      
     return [Ifast,Islow]
                 
 def CSP_pointers(A,B):
@@ -651,7 +665,7 @@ def classify_species(stateYT, rhs, pointers, M, trace):
             if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace'
     return species_type
         
-def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):
+def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype):
     imPart = evals.imag!=0
     if(imPart[i] and imPart[i-1] and evals[i].real==evals[i-1].real): i = i-1  #if the second of a complex pair, shift back the index by 1
     Index = np.zeros(2*nr)
@@ -666,15 +680,16 @@ def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B):
             Index[k] = np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i])
             norm = norm + abs(Index[k])
     for k in range(2*nr):
-            Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
+            if normtype != 'none': 
+                Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
     return Index
     
-def CSP_timescale_participation_indices(nr, JacK, evals, A, B):
+def CSP_timescale_participation_indices(nr, JacK, evals, A, B, normtype):
     """Ns x 2Nr array containing TPI of reaction k to variable i"""
     nv = A.shape[0]
     TPI = np.zeros((nv,2*nr))
     for i in range(nv):
-        TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B)
+        TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype)
     return TPI    
 
 
