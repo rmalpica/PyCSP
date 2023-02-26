@@ -18,7 +18,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.0.*',
+    python_requires='>=3',
     install_requires=[
           "Cantera>=2.4.0","numpy","matplotlib",
       ],
