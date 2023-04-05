@@ -187,6 +187,8 @@ class CSPsimplify:
                 iter = iter + 1
                 if active_species == previous_active:
                     break
+                    
+            active_species.update(self.targetset) #add again target species, in case inerts have been removed as traces 
             all_active_species.append(active_species)  #list containing active species in each datapoint
             all_active_reacs[idx] = active_reactions  #list containing active reactions in each datapoint
             
