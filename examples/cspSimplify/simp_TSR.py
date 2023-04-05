@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import PyCSP.Functions as csp
 import PyCSP.Simplify as simp
 import PyCSP.utils as utils
-from PyCSP.soln2cti import write
+#from PyCSP.soln2cti import write
 
 
 FuComp = 'CH4'
@@ -49,7 +49,7 @@ simplifier = simp.CSPsimplify(dtl_mech,dataset)
 #simplifier settings
 simplifier.TSRtargetset = True
 simplifier.TSRtol = 0.5
-simplifier.targetset = {'N2'}
+simplifier.targetset = {'N2','AR'}
 simplifier.problemtype = 'constP'
 simplifier.scaled = False
 simplifier.csprtol = 1.0e-2
@@ -74,7 +74,8 @@ for i in range(len(thr)):
     if sorted(simp.species_names) != prev_species:  #append only if different from previous one
         simp_mech.append(simp)
         #write(simp, output_filename='skeletal_N'+str(simp.n_species)+'_R'+str(simp.n_reactions)+'.inp', skip_thermo=True, skip_transport=True)
-        write(simp, output_filename='skeletal_N'+str(simp.n_species)+'_R'+str(simp.n_reactions)+'.inp')
+        #write(simp, output_filename='skeletal_N'+str(simp.n_species)+'_R'+str(simp.n_reactions)+'.inp')
+        simp.write_yaml('skeletal_N'+str(simp.n_species)+'_R'+str(simp.n_reactions)+'.yaml')
         prev_species = sorted(simp.species_names)
 
 nmech = len(simp_mech)
@@ -164,6 +165,7 @@ for i in range(nmech):
     ax.set_ylim([1e-3, 1e2])
     ax.legend()
     plt.savefig('ign_delay_error_sk'+str(simp_mech[i].n_species)+'_'+str(simp_mech[i].n_reactions)+'.png', dpi=800, transparent=False)
+    plt.close()
     
         
 for i in range(nmech):
@@ -179,6 +181,7 @@ for i in range(nmech):
     ax.set_ylim([1e-6, 1e2])
     ax.legend()
     plt.savefig('equilibrium_error_sk'+str(simp_mech[i].n_species)+'_'+str(simp_mech[i].n_reactions)+'.png', dpi=800, transparent=False)
+    plt.close()
     
 
 
