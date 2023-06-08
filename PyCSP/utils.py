@@ -119,3 +119,26 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
         sim.step()
         states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
     return states
+
+def find_duplicate_reactions(R):
+    """    
+
+    Parameters
+    ----------
+    R : an instance of a Reaction object, e.g.:
+    R = ct.Reaction.list_from_file("gri30.yaml", gas)
+    R = ct.Reaction.listFromCti(open("path/to/gri30.cti").read())
+    R = ct.Reaction.listFromXml(open("path/to/gri30.xml").read())
+
+    Returns
+    -------
+    duplicates : a list of lists of duplicate reactions
+
+    """
+    duplicates = []
+    for id,reac in zip(range(len(R)),R):
+        if reac.duplicate:
+            listdup = [idx for idx,r in zip(range(len(R)),R) if r.duplicate and reac.equation==r.equation]
+            if listdup not in duplicates:
+                duplicates.append(listdup)
+    return duplicates            
