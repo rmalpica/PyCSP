@@ -11,13 +11,14 @@ import PyCSP.Simplify as simp
 import PyCSP.utils as utils
 #from PyCSP.soln2cti import write
 
+parent_mech = 'gri30.cti' 
 
 FuComp = 'CH4'
 OxComp = 'O2:1, N2:3.76'
 
 #-------CREATE DATASET---------
 #create gas from original mechanism file hydrogen.cti
-dtl_mech = csp.CanteraCSP('gri30.cti')
+dtl_mech = csp.CanteraCSP(parent_mech)
 
 T_list = [1000]
 phi_list = [1.0]
@@ -40,11 +41,11 @@ dataset = np.concatenate((allY,allT[:,np.newaxis],allP[:,np.newaxis]),axis=1)
 print('Dataset created, start processing...')
 
 #coarsen dataset (to speed up)
-dataset = dataset[::32]
-print('Number of states in dataset: %i' %len(dataset))
+datasetc = dataset[::32]
+print('Number of states in dataset: %i' %len(datasetc))
 
 #init simplifier
-simplifier = simp.CSPsimplify(dtl_mech,dataset)
+simplifier = simp.CSPsimplify(dtl_mech,datasetc)
 
 #simplifier settings
 simplifier.TSRtargetset = True
@@ -85,14 +86,15 @@ print('%i mechanisms found' % (nmech))
 print('Assessing skeletal mechanisms performance over a range of conditions...')
 
 #import DTL
-dtl_mech = csp.CanteraCSP('gri30.cti')
+dtl_mech = csp.CanteraCSP(parent_mech)
 
-#import Skeletal(s)
-read_mech = sorted([f for f in os.listdir('./') if f.startswith('skeletal')])
-simp_mech = []
-for i in range(len(read_mech)):
-    simp_mech.append(csp.CanteraCSP(read_mech[i]))
-print('%i mechanisms found' % len(simp_mech))
+if import_simp_mech:
+    #import Skeletal(s)
+    read_mech = sorted([f for f in os.listdir('./') if f.startswith('skeletal')])
+    simp_mech = []
+    for i in range(len(read_mech)):
+        simp_mech.append(csp.CanteraCSP(read_mech[i]))
+    print('%i mechanisms found' % len(simp_mech))
 
 T_list = np.arange(1000,1800,100)
 phi_list = [0.5, 0.7, 1.0, 1.2, 1.5]
