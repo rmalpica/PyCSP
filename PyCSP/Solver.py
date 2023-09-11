@@ -181,7 +181,7 @@ def RCorr(A,f,lam,M):
     Rc = np.zeros((ns))
     if(M > 0):
         #lamMat = np.diag(1.0/lam[0:M].real)   #linear approximation
-        lamMat = - np.diag( (np.exp((1.0/abs(lam[M].real))*lam[0:M].real) -1 )/lam[0:M].real )   #exponential decay approximation
+        lamMat = np.diag( (1 - np.exp((1.0/abs(lam[M].real))*lam[0:M].real) )/lam[0:M].real )   #exponential decay approximation
         Rc = np.matmul(np.matmul(np.transpose(A[0:M]), lamMat), f[0:M])
     return Rc
 
