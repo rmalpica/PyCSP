@@ -12,7 +12,7 @@ import PyCSP.Simplify as simp
 
 #-------CREATE DATASET---------
 #create gas from original mechanism file hydrogen.cti
-dtl_mech = csp.CanteraCSP('gri30.cti')
+dtl_mech = csp.CanteraCSP('gri30.yaml')
 
 #set the gas state
 T = 1000

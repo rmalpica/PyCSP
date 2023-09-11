@@ -188,8 +188,8 @@ class CanteraThermoKinetics(ct.Solution):
     def generalized_Stoich_matrix_const_p(self):
         """N_v x 2*N_r matrix containing the S components in column major format, 
         such that S dot Rvec yields RHS"""
-        nu_p = self.product_stoich_coeffs()
-        nu_r = self.reactant_stoich_coeffs()
+        nu_p = self.product_stoich_coeffs
+        nu_r = self.reactant_stoich_coeffs
         rho = self.density
         numat = np.concatenate((nu_p-nu_r,nu_r-nu_p),axis=1)
         smat = np.vstack([numat[i] * self.molecular_weights[i] for i in range(self.n_species)])/rho
@@ -213,8 +213,8 @@ class CanteraThermoKinetics(ct.Solution):
         wmix = self.mean_molecular_weight
         gamma = cp / cv
         
-        nu_p = self.product_stoich_coeffs()
-        nu_r = self.reactant_stoich_coeffs()
+        nu_p = self.product_stoich_coeffs
+        nu_r = self.reactant_stoich_coeffs
         rho = self.density
         
         c1g = gamma/(rho*cp)

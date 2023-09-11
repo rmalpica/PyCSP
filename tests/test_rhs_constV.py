@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import PyCSP.Functions as csp
 
 #create gas from original mechanism file hydrogen.cti
-gas = csp.CanteraCSP('hydrogen.cti')
+gas = csp.CanteraCSP('hydrogen.yaml')
 
 #set the gas state
 T = 1000
