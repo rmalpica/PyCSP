@@ -11,7 +11,7 @@ import PyCSP.Functions as csp
 import PyCSP.utils as utils
 
 #create gas from original mechanism file hydrogen.cti
-gas = csp.CanteraCSP('chaos12.cti')
+gas = csp.CanteraCSP('chaos12.yaml')
 
 #-------IMPORT DATA---------
 #read data from file

@@ -11,7 +11,7 @@ import PyCSP.Solver as cspS
 import time
 
 #create gas from original mechanism file hydrogen.cti
-gas = cspF.CanteraCSP('hydrogen.cti')
+gas = cspF.CanteraCSP('hydrogen.yaml')
 
 #set the gas state
 T = 1000
