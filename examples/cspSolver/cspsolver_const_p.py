@@ -53,7 +53,7 @@ r = ct.IdealGasConstPressureReactor(gas)
 sim = ct.ReactorNet([r])
 
 statesCV = ct.SolutionArray(gas, extra=['t'])
-sim.set_initial_time(t0)
+#sim.set_initial_time(t0)
 
 starttimeCV = time.time()
 while sim.time < t_end:
