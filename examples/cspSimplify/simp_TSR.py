@@ -11,7 +11,7 @@ import PyCSP.Simplify as simp
 import PyCSP.utils as utils
 #from PyCSP.soln2cti import write
 
-parent_mech = 'gri30.cti' 
+parent_mech = 'gri30.yaml' 
 
 FuComp = 'CH4'
 OxComp = 'O2:1, N2:3.76'
@@ -88,6 +88,7 @@ print('Assessing skeletal mechanisms performance over a range of conditions...')
 #import DTL
 dtl_mech = csp.CanteraCSP(parent_mech)
 
+import_simp_mech = False
 if import_simp_mech:
     #import Skeletal(s)
     read_mech = sorted([f for f in os.listdir('./') if f.startswith('skeletal')])
