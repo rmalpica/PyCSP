@@ -466,15 +466,13 @@ def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
         fj = f[j]                      #this mode amplitued
         lamj = evals[j].real           #this mode eigenvalue (real part)
         
-        for i in range(nv):
-            Aji = Aj[i]                     #i-th component of this mode Revec
-            delw[i] = delw[i] + modeContribution(Aji,fj,taujp1,lamj)    #contribution of j-th mode to i-th var            
-            if np.abs(delw[i]) > ewt[i]:
-                if j==0:
-                    M = 0
-                else:
-                    M = j-1 if (imPart[j] and imPart[j-1] and evals[j].real==evals[j-1].real) else j    #if j is the second of a pair, move back by 2                    
-                return M
+        delw = delw + modeContribution(Aj,fj,taujp1,lamj)    #contribution of j-th mode to state variables    
+        if np.any(np.abs(delw) > ewt):
+            if j==0:
+                M = 0
+            else:
+                M = j-1 if (imPart[j] and imPart[j-1] and evals[j].real==evals[j-1].real) else j    #if j is the second of a pair, move back by 2                    
+            return M
 
     #print("All modes are exhausted")
     M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
