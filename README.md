@@ -25,7 +25,7 @@ Cantera chem-input files are required (.cti or .yaml, depending on the installed
 FluidFoam (https://github.com/fluiddyn/fluidfoam) is suggested as a direct interface with openFOAM data.
 
 # Warning
-Datasets in the tsrAnalysis example folder are quite heavy. Due to limited github bandwidth, it may happen that "flamelet_state.dat" and "flamelet_rhsDiff.dat" are not correctly checked out. In that case, please write me an e-mail. I will send you the files.
+Datasets in the tsrAnalysis example folder are quite heavy. Due to limited github bandwidth, it may happen that "flamelet_state.dat" and "flamelet_rhsDiff.dat" are not correctly checked out. In that case, please write me an e-mail (riccardo.malpicagalassi [at] uniroma1.it). I will send you the files.
 
 # Documentation
 Can be found in the /documentation folder
