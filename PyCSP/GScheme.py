@@ -26,7 +26,22 @@ class GScheme:
         self._T = 0
         self._H = gas.nv - gas.n_elements 
         self.factor = 0.2
+        self.reuseThr = 1.e-1
         self._iter = 0
+
+        self.reuse = False
+        self._diagJac = []
+        self._normJac = 0.0
+        self._skipBasis = 0
+        self._updateBasis = 0
+        self._basisStatus = 0
+        
+        self._lam = []
+        self._A = []
+        self._B = []
+        self._f = []
+        self._tau = []
+
     
     @property
     def csprtolT(self):
@@ -106,17 +121,103 @@ class GScheme:
     @factor.setter
     def factor(self,value):
         self._factor = value
+
+    @property
+    def reuseThr(self):
+        return self._reuseThr
+          
+    @reuseThr.setter
+    def reuseThr(self,value):
+        self._reuseThr = value
     
     @property
     def iter(self):
         return self._iter
+    
+    @property
+    def reuse(self):
+        return self._reuse
+          
+    @reuse.setter
+    def reuse(self,value):
+        self._reuse = value
+ 
+    @property
+    def normJac(self):
+        return self._normJac 
+
+    @normJac.setter
+    def normJac(self,value):
+        self._normJac = value
+
+    @property
+    def diagJac(self):
+        return self._diagJac      
+    
+    @diagJac.setter
+    def diagJac(self,value):
+        self._diagJac = value
+
+    @property
+    def skipBasis(self):
+        return self._skipBasis
+
+    @skipBasis.setter
+    def skipBasis(self,value):
+        self._skipBasis = value
+ 
+    @property
+    def updateBasis(self):
+        return self._updateBasis
+
+    @updateBasis.setter
+    def updateBasis(self,value):
+        self._updateBasis = value
+    
+    @property
+    def basisStatus(self):
+        return self._basisStatus
+
+    @basisStatus.setter
+    def basisStatus(self,value):
+        self._basisStatus = value
+
+    @property
+    def lam(self):
+        return self._lam
         
+    @property
+    def A(self):
+        return self._A
+    
+    @property
+    def B(self):
+        return self._B
+    
+    @property
+    def f(self):
+        return self._f
+    
+    @property
+    def tau(self):
+        return self._tau
+    
+    """ ### Methods ### """
             
     def CSPcore(self,y):
         self._gas.set_stateYT(y)
-        lam,A,B,f = self._gas.get_kernel()
-        tau = cspF.timescales(lam)
-        return [A,B,f,lam,tau]
+        if(self.reuse): self.normJac = self.calc_normJac(y)
+        if(not self.reuse or self.iter < 3 or self.normJac > self.reuseThr or self.skipBasis > 250):
+            self.skipBasis = 0
+            self.basisStatus = 1
+            self._lam,self._A,self._B,self._f = self._gas.get_kernel()
+            self._tau = cspF.timescales(self.lam)
+            self.updateBasis = self.updateBasis + 1
+        else:
+            self._f = np.matmul(self.B,self.rhs(y)) 
+            self.basisStatus = 0
+            self.skipBasis = self.skipBasis + 1
+        
     
     
     def CSPexhaustedModes(self,y,lam,A,B,tau,rtol,atol):
@@ -166,37 +267,37 @@ class GScheme:
         #calc CSP basis in yold
         self._gas.jacobiantype = self.jacobiantype
         yold = self.y
-        A,B,f,lam,tau = self.CSPcore(yold)
+        self.CSPcore(yold)
         
         #apply tail correction and advance to ysol
-        self._Tc = TCorr(A,f,lam,self.T)
+        self._Tc = TCorr(self.A,self.f,self.lam,self.T)
         ysol = self.tail_correction()
         self._y = ysol
         
         #calc new T
-        self._T = self.CSPexhaustedModes(ysol,lam,A,B,tau,self.csprtolT,self.cspatolT)
+        self._T = self.CSPexhaustedModes(ysol,self.lam,self.A,self.B,self.tau,self.csprtolT,self.cspatolT)
         
         #calc integration time
-        self._dt = smart_timescale(tau,self.factor,self.T,lam[self.T],self.dt)
+        self._dt = smart_timescale(self.tau,self.factor,self.T,self.lam[self.T],self.dt)
         
         #calc new H
-        self._H = self.CSPslowModes(ysol,lam,A,B,self.dt,self.csprtolH,self.cspatolH,self.T) 
+        self._H = self.CSPslowModes(ysol,self.lam,self.A,self.B,self.dt,self.csprtolH,self.cspatolH,self.T) 
         
         #advance in time active dynamics to ya
         print('integrating %d - %d = %d modes\n' %(self.H,self.T,len(ysol[self.T:self.H])))
-        ya = self.RK4gsc(A,B)
+        ya = self.RK4gsc(self.A,self.B)
         
         #calc Hc in ystar               
         self._y = ya
-        f = self.CSPamplitudes(ya,B)
-        self._Hc = HCorr(A,f,lam,self.H,self._gas.n_elements,self.dt)
+        f = self.CSPamplitudes(ya,self.B)
+        self._Hc = HCorr(self.A,f,self.lam,self.H,self._gas.n_elements,self.dt)
         #apply head correction and advance to ystar
         ystar = self.head_correction()
 
         #calc Tc in ystar
         self._y = ystar
-        f = self.CSPamplitudes(ystar,B)
-        self._Tc = TCorr(A,f,lam,self.T)        
+        f = self.CSPamplitudes(ystar,self.B)
+        self._Tc = TCorr(self.A,f,self.lam,self.T)        
         #apply tail correction and advance to ynew
         ynew = self.tail_correction()
         
@@ -231,6 +332,16 @@ class GScheme:
         ynew = self.y + self.Hc
         return ynew
     
+    def calc_normJac(self,y):
+        diagOld = self.diagJac.copy()
+        self.diagJac = self._gas.jacobian_diagonal
+        normJac = 0.0
+        if (self.iter > 3):
+            dum = [(self.diagJac[i]-diagOld[i])/self.diagJac[i] if(np.abs(self.diagJac[i]) > 1e-20) else 0.0 for i in range(len(diagOld)-1)]
+            normJac = np.linalg.norm(dum)
+        #print('norm = %10.3e' % normJac)
+        return normJac   
+    
 
 def TCorr(A,f,lam,T):
     ns = A.shape[0]
@@ -246,7 +357,7 @@ def HCorr(A,f,lam,H,nel,dt):
     Hc = np.zeros((ns))
     up = ns - nel
     if(H < up):
-        fLamVec = dt*f[H:up]*(1 + 0.5 * dt * lam[H:up].real)    #first-order      #not sure if it's H or H+1
+        fLamVec = dt*f[H:up]*(1 + 0.5 * dt * lam[H:up].real)    #first-order    
         Hc = np.matmul(np.transpose(A[H:up]), fLamVec)
     return Hc
 
@@ -269,18 +380,12 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
     delw = np.zeros(nv)
     
     for j in range(nModes,Tail,-1):    #backwards loop over eligible modes (conserved excluded)
-        #print("mode %d" %j)
-        #print(ewt)
         Aj = Revec[j]                  #this mode right evec
         fj = f[j]                      #this mode amplitude
         lamj = evals[j].real           #this mode eigenvalue (real part)
-        #print(evals)
-        #print("evalj %e, dt %e, f %e" %(lamj,dt,fj))
         
-        delw = delw + 0.5*dt*dt*Aj*fj*np.abs(lamj)    #contribution of j-th mode to all vars     
-        #print(delw)       
+        delw = delw + 0.5*dt*dt*Aj*fj*np.abs(lamj)    #contribution of j-th mode to all vars           
         if np.any(np.abs(delw) > ewt):
-            #print("inside if")
             if j==nModes:
                 H = nModes  
             else:
@@ -291,6 +396,8 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
     H = Tail   #if criterion is never verified, no modes are active.
     #print("-----------")
     return H
+
+
 
         
        
