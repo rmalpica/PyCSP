@@ -393,7 +393,8 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
             return H
 
     #print("No modes are active")
-    H = Tail   #if criterion is never verified, no modes are active.
+    #H = Tail   #if criterion is never verified, no modes are active.
+    H = Tail + 1  #if criterion is never verified, leave one active mode
     #print("-----------")
     return H
 
