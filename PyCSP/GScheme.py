@@ -284,7 +284,7 @@ class GScheme:
         self._H = self.CSPslowModes(ysol,self.lam,self.A,self.B,self.dt,self.csprtolH,self.cspatolH,self.T) 
         
         #advance in time active dynamics to ya
-        print('integrating %d - %d = %d modes\n' %(self.H,self.T,len(ysol[self.T:self.H])))
+        #print('integrating %d - %d = %d modes\n' %(self.H,self.T,len(ysol[self.T:self.H])))
         ya = self.RK4gsc(self.A,self.B)
         
         #calc Hc in ystar               

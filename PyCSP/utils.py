@@ -110,7 +110,7 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     
     
     #integrate ODE
-    r = ct.IdealGasConstPressureReactor(gas)
+    r = ct.IdealGasReactor(gas)
     sim = ct.ReactorNet([r])
     states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
     

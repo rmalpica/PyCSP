@@ -446,6 +446,9 @@ class CanteraCSP(CanteraThermoKinetics):
 
     def clean_conserved(self,evals):
         """Zero-out conserved modes eigenvalues"""
+        #threshold = np.abs(evals[0] * np.finfo(float).eps) #smallest acceptable eigenvalue based on range precision
+        #nCons = max( self.n_elements , np.sum(np.abs(evals) < threshold) )  #conserved subspace is n_elements or out-of-range eigenvalues if larger
+        #i = self.nv - nCons
         i = self.nv-self.n_elements
         evals[i:] = 0.0
         
@@ -454,7 +457,10 @@ class CanteraCSP(CanteraThermoKinetics):
 """
 def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     nv = len(Revec)
-    nEl = n_elements 
+    #nEl = n_elements 
+    threshold = np.abs(evals[0] * np.finfo(float).eps) #smallest acceptable eigenvalue based on range precision
+    nEl = max( n_elements , np.sum(np.abs(evals) < threshold) )  #conserved subspace is n_elements or out-of-range eigenvalues if larger
+
     #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
     imPart = evals.imag!=0
     nModes = nv - nEl    #removing conserved modes
@@ -487,7 +493,8 @@ def setEwt(y,rtol,atol):
 
 
 def modeContribution(a,f,tau,lam):
-    delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
+    #delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
+    delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 and np.isfinite(np.exp(tau*lam)) else 1e+20
     return delwMi        
 
 
