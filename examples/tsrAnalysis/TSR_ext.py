@@ -15,7 +15,13 @@ gas = csp.CanteraCSP('chaos12.yaml')
 
 #-------IMPORT DATA---------
 #read data from file
-state = np.loadtxt('flamelet_state.dat')
+try:
+    state = np.loadtxt('flamelet_state.dat')
+except FileNotFoundError:
+    print(f"It looks like flamelet_state.dat is not in this folder. ")
+    print(f"A likely cause is that the data file coulds not be checked out due to github bandwidth limits. Shoot me an e-mail at riccardo.malpicagalassi [at] uniroma1.it and I will send you the file.")
+    exit()
+
 time = state[:,0]
 counter = state[:,1]
 zeta = state[:,2]
@@ -23,8 +29,14 @@ Pressure = state[:,3]
 Temp = state[:,4]
 Y =  state[:,5:]
 
+try:
+    rhsD = np.loadtxt('flamelet_rhsDiff.dat')
+except FileNotFoundError:
+    print(f"It looks like flamelet_rhsDiff.dat is not in this folder. ")
+    print(f"A likely cause is that the data file coulds not be checked out due to github bandwidth limits. Shoot me an e-mail at riccardo.malpicagalassi [at] uniroma1.it and I will send you the file.")
+    exit()
 
-rhsD = np.loadtxt('flamelet_rhsDiff.dat')
+
 diffTemp = rhsD[:,3]
 diffY =  rhsD[:,4:]
 
