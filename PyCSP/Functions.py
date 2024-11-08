@@ -157,6 +157,31 @@ class CanteraCSP(CanteraThermoKinetics):
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         return M
  
+    def calc_subspaces(self, **kwargs):
+        """Computes subspaces partitioning (M and H). 
+        Optional arguments are rtol and atol for the calculation of M, and rtol and atol for the calculation of H.
+        If not provided, uses default or previously set values"""
+        rtolTail = self.rtol
+        atolTail = self.atol
+        rtolHead = self.rtol
+        atolHead = self.atol
+        for key, value in kwargs.items():
+            if (key == 'rtolTail'):                 
+                rtolTail = value
+            elif (key == 'atolTail'): 
+                atolTail = value
+            elif (key == 'rtolHead'): 
+                rtolHead = value
+            elif (key == 'atolHead'): 
+                atolHead = value
+            else:
+                raise ValueError("unknown argument --> %s" %key)
+        if self.is_changed(): 
+            self.update_kernel()
+            self._changed = False
+        M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtolTail,atolTail)
+        H = findH(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau[M],self.f,rtolHead,atolHead,M)
+        return M, H
        
     def calc_TSR(self,**kwargs):
         """Computes number of exhausted modes (M) and the TSR. 
@@ -498,7 +523,34 @@ def modeContribution(a,f,tau,lam):
     return delwMi        
 
 
+def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
+    nv = len(Revec)
+    nEl = n_elements 
+    #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
+    imPart = evals.imag!=0
+    nModes = nv - nEl - 1   #removing conserved modes
+    ewt = setEwt(stateYT,rtol,atol)    
+    delw = np.zeros(nv)
+    
+    for j in range(nModes,Tail,-1):    #backwards loop over eligible modes (conserved excluded)
+        Aj = Revec[j]                  #this mode right evec
+        fj = f[j]                      #this mode amplitude
+        lamj = evals[j].real           #this mode eigenvalue (real part)
+        
+        delw = delw + 0.5*dt*dt*Aj*fj*np.abs(lamj)    #contribution of j-th mode to all vars           
+        if np.any(np.abs(delw) > ewt):
+            if j==nModes:
+                H = nModes  
+            else:
+                H = j+1 if (imPart[j] and imPart[j+1] and evals[j].real==evals[j+1].real) else j    #if j is the second of a pair, move fwd by 2                    
+            return H
 
+    #print("No modes are active")
+    #H = Tail   #if criterion is never verified, no modes are active.
+    H = Tail + 1  #if criterion is never verified, leave one active mode
+    #print("-----------")
+    return H
+    
 
 """ ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
 """

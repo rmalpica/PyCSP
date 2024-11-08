@@ -229,7 +229,7 @@ class GScheme:
     def CSPslowModes(self,y,lam,A,B,dt,rtol,atol,Tail):
         self._gas.set_stateYT(y)
         f = np.matmul(B,self._gas.source)
-        H = findH(self._gas.n_elements,y,lam,A,dt,f,rtol,atol,Tail)
+        H = cspF.findH(self._gas.n_elements,y,lam,A,dt,f,rtol,atol,Tail)
         return H
     
     def CSPamplitudes(self,y,B):
@@ -370,33 +370,6 @@ def smart_timescale(tau,factor,T,lamT,dtold):
     dt = min(dt,1.5*dtold)
     return dt
 
-def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
-    nv = len(Revec)
-    nEl = n_elements 
-    #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
-    imPart = evals.imag!=0
-    nModes = nv - nEl - 1   #removing conserved modes
-    ewt = cspF.setEwt(stateYT,rtol,atol)    
-    delw = np.zeros(nv)
-    
-    for j in range(nModes,Tail,-1):    #backwards loop over eligible modes (conserved excluded)
-        Aj = Revec[j]                  #this mode right evec
-        fj = f[j]                      #this mode amplitude
-        lamj = evals[j].real           #this mode eigenvalue (real part)
-        
-        delw = delw + 0.5*dt*dt*Aj*fj*np.abs(lamj)    #contribution of j-th mode to all vars           
-        if np.any(np.abs(delw) > ewt):
-            if j==nModes:
-                H = nModes  
-            else:
-                H = j+1 if (imPart[j] and imPart[j+1] and evals[j].real==evals[j+1].real) else j    #if j is the second of a pair, move fwd by 2                    
-            return H
-
-    #print("No modes are active")
-    #H = Tail   #if criterion is never verified, no modes are active.
-    H = Tail + 1  #if criterion is never verified, leave one active mode
-    #print("-----------")
-    return H
 
 
 
