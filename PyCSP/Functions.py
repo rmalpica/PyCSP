@@ -480,7 +480,7 @@ class CanteraCSP(CanteraThermoKinetics):
     
 """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
 """
-def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
+def findM_original(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     nv = len(Revec)
     #nEl = n_elements 
     threshold = np.abs(evals[0] * np.finfo(float).eps) #smallest acceptable eigenvalue based on range precision
@@ -497,8 +497,10 @@ def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
         fj = f[j]                      #this mode amplitued
         lamj = evals[j].real           #this mode eigenvalue (real part)
         
-        delw = delw + modeContribution(Aj,fj,taujp1,lamj)    #contribution of j-th mode to state variables    
-        if np.any(np.abs(delw) > ewt):
+        delwMi =  modeContribution(Aj,fj,taujp1,lamj)    #contribution of j-th mode to state variables    
+        delw += delwMi
+        #if np.any(np.abs(delw) > ewt):
+        if np.max(np.abs(delw) / ewt) > 1:
             if j==0:
                 M = 0
             else:
@@ -510,17 +512,96 @@ def findM(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     return M
 
 
-
-def setEwt(y,rtol,atol):   
+def setEwt_original(y,rtol,atol):   
     ewt = [rtol * absy + atol if absy >= 1.0e-6 else absy + atol for absy in np.absolute(y)]
     return ewt
 
 
-
-def modeContribution(a,f,tau,lam):
+def modeContribution_original(a,f,tau,lam):
     #delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
     delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 and np.isfinite(np.exp(tau*lam)) else 1e+20
     return delwMi        
+
+""" ~~~~~~~~~~~~~~ findM optimized ~~~~~~~~~~~~~~~~
+"""
+
+def findM(n_elements, stateYT, evals, Revec, tau, f, rtol, atol):
+    nv = len(Revec)
+    # Threshold for eigenvalue precision
+    threshold = np.abs(evals[0] * np.finfo(float).eps)
+    nEl = max(n_elements, np.sum(np.abs(evals) < threshold))  # Conserved subspace size
+    
+    # Identify imaginary part of eigenvalues
+    imPart = evals.imag != 0
+    nModes = nv - nEl  # Number of non-conserved modes
+    
+    # Set error weight and precompute its absolute value
+    ewt = np.abs(setEwt(stateYT, rtol, atol))
+    
+    # Precompute reusable values to minimize redundant computations
+    tau_shifted = tau[1:]  # Shifted tau values for efficiency
+    real_evals = evals.real
+    pair_check = imPart[:-1] & imPart[1:] & (real_evals[:-1] == real_evals[1:])
+    pair_check_modes = pair_check[:nModes - 1]
+    
+    # Slice arrays to get only non-conserved modes
+    Revec_modes = Revec[:nModes - 1]  # Shape: (nModes - 1, n_elements)
+    f_modes = f[:nModes - 1]          # Shape: (nModes - 1,)
+    tau_modes = tau_shifted[:nModes - 1]  # Shape: (nModes - 1,)
+    lam_modes = real_evals[:nModes - 1]   # Shape: (nModes - 1,)
+    
+    # Compute mode contributions
+    delwMi = modeContribution(Revec_modes, f_modes, tau_modes, lam_modes)  # Shape: (nModes - 1, n_elements)
+    
+    # Compute cumulative sums over modes
+    delw_cumulative = np.cumsum(delwMi, axis=0)  # Shape: (nModes - 1, n_elements)
+    
+    # Compute the condition for each mode
+    condition = np.any(np.abs(delw_cumulative) > ewt, axis=1)  # Shape: (nModes - 1,)
+    
+    # Find the first index where condition is True
+    indices = np.where(condition)[0]
+    
+    if len(indices) == 0:
+        # If no condition is met, return the last mode index
+        return nModes - 1
+    else:
+        j = indices[0]
+        if j == 0:
+            return 0
+        else:
+            # Adjust index based on pair_check
+            if pair_check_modes[j - 1]:
+                return j - 1
+            else:
+                return j
+
+def setEwt(y, rtol, atol):
+    absy = np.abs(y)
+    ewt = np.where(absy >= 1.0e-6, rtol * absy + atol, absy + atol)
+    return ewt
+
+def modeContribution(a, f, tau, lam):
+    # Compute exponential term
+    exp_term = np.exp(tau * lam)
+    
+    # Identify invalid cases
+    invalid = (lam == 0.0) | (~np.isfinite(exp_term))
+    valid = ~invalid
+    
+    # Initialize delwMi with default value
+    delwMi = np.full_like(a, 1e+20, dtype=np.float64)
+    
+    # Compute valid contributions
+    if np.any(valid):
+        f_valid = f[valid][:, np.newaxis]
+        lam_valid = lam[valid][:, np.newaxis]
+        exp_term_valid = exp_term[valid][:, np.newaxis]
+        a_valid = a[valid, :]
+        delwMi[valid, :] = a_valid * f_valid * (exp_term_valid - 1) / lam_valid
+    
+    return delwMi
+
 
 
 def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
