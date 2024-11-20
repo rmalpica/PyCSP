@@ -2,16 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Sep  11 15:41:22 2023
-
+Last update on Wed Nov 20 2024
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
 import sys
 import numpy as np
+import pandas as pd
 import PyCSP.Functions as cspF
+from PyCSP.profiling_tools import profile_cpu_time_and_count
 
 
 class GScheme:
     def __init__(self, gas):   
+        self._initializing = True
         self._gas = gas
         self._y = []
         self._t = []
@@ -26,10 +29,10 @@ class GScheme:
         self._T = 0
         self._H = gas.nv - gas.n_elements 
         self.factor = 0.2
-        self.reuseThr = 1.e-1
         self._iter = 0
 
         self.reuse = False
+        self.reuseThr = 1.e-1
         self._diagJac = []
         self._normJac = 0.0
         self._skipBasis = 0
@@ -41,6 +44,20 @@ class GScheme:
         self._B = []
         self._f = []
         self._tau = []
+
+        self.integrate_time = 0.0
+        self.integrate_n = 0
+        self.CSPbasis_time = 0.0
+        self.CSPbasis_n = 0
+        self.calcM_time = 0.0
+        self.calcM_n = 0
+        self.calcH_time = 0.0
+        self.calcH_n = 0
+        self.RK4_time = 0.0
+        self.RK4_n = 0
+
+        self._initializing = False
+
 
     
     @property
@@ -210,22 +227,28 @@ class GScheme:
         if(not self.reuse or self.iter < 3 or self.normJac > self.reuseThr or self.skipBasis > 250):
             self.skipBasis = 0
             self.basisStatus = 1
-            self._lam,self._A,self._B,self._f = self._gas.get_kernel()
+            self._lam,self._A,self._B,self._f = self.get_CSP_kernel()
             self._tau = cspF.timescales(self.lam)
             self.updateBasis = self.updateBasis + 1
         else:
             self._f = np.matmul(self.B,self.rhs(y)) 
             self.basisStatus = 0
             self.skipBasis = self.skipBasis + 1
-        
+
+    @profile_cpu_time_and_count("CSPbasis_time", "CSPbasis_n", log=False)    
+    def get_CSP_kernel(self):
+        lam,A,B,f = self._gas.get_kernel()
+        return lam,A,B,f 
+
     
-    
+    @profile_cpu_time_and_count("calcM_time", "calcM_n", log=False)    
     def CSPexhaustedModes(self,y,lam,A,B,tau,rtol,atol):
         self._gas.set_stateYT(y)
         f = np.matmul(B,self._gas.source)
         M = cspF.findM(self._gas.n_elements,y,lam,A,tau,f,rtol,atol)
         return M
     
+    @profile_cpu_time_and_count("calcH_time", "calcH_n", log=False)    
     def CSPslowModes(self,y,lam,A,B,dt,rtol,atol,Tail):
         self._gas.set_stateYT(y)
         f = np.matmul(B,self._gas.source)
@@ -262,7 +285,8 @@ class GScheme:
     def set_initial_value(self,y0,t0):
         self._y = y0
         self._t = t0
-    
+
+    @profile_cpu_time_and_count("integrate_time", "integrate_n", log=False) 
     def integrate(self):
         #calc CSP basis in yold
         self._gas.jacobiantype = self.jacobiantype
@@ -305,7 +329,7 @@ class GScheme:
         self._t = self.t + self.dt
         self._iter = self.iter + 1
     
-                                
+    @profile_cpu_time_and_count("RK4_time", "RK4_n", log=False)                                
     def RK4gsc(self,A,B):
         def delcsi(csi):            
             y2 = self.y + np.matmul(np.transpose(A[self.T:self.H]),csi)
@@ -340,7 +364,28 @@ class GScheme:
             dum = [(self.diagJac[i]-diagOld[i])/self.diagJac[i] if(np.abs(self.diagJac[i]) > 1e-20) else 0.0 for i in range(len(diagOld)-1)]
             normJac = np.linalg.norm(dum)
         #print('norm = %10.3e' % normJac)
-        return normJac   
+        return normJac
+
+    def profiling(self):
+        data = {
+            "Function": ["G-Scheme Total", "Basis calculation", "M calculation", "H calculation", "RK4 solve"],
+            "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.calcH_time, self.RK4_time],
+            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.calcH_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time],
+            "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.calcH_n,self.RK4_n],
+            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.calcH_time/self.calcH_n, self.RK4_time/self.RK4_n],
+        }
+        
+        # Create the DataFrame
+        df = pd.DataFrame(data)
+        
+        extra_rows = [
+            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time))/self.integrate_n},
+        ] 
+        df = pd.concat([df, pd.DataFrame(extra_rows)], ignore_index=True)
+        
+        # Print the table
+        print(df.to_string(index=False))
+
     
 
 def TCorr(A,f,lam,T):
@@ -369,13 +414,3 @@ def smart_timescale(tau,factor,T,lamT,dtold):
     #if(lamT.real > 0):
     dt = min(dt,1.5*dtold)
     return dt
-
-
-
-
-        
-       
-    
-    
-    
-    

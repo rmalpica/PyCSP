@@ -71,7 +71,7 @@ simp_mech = []
 prev_species = sorted(dtl_mech.species_names)
 for i in range(len(thr)):
     species, reactions = simplifier.simplify_mechanism(thr[i])
-    simp = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics', species=species, reactions=reactions)
+    simp = csp.CanteraCSP(thermo='ideal-gas', kinetics='gas', species=species, reactions=reactions)
     if sorted(simp.species_names) != prev_species:  #append only if different from previous one
         simp_mech.append(simp)
         #write(simp, output_filename='skeletal_N'+str(simp.n_species)+'_R'+str(simp.n_reactions)+'.inp', skip_thermo=True, skip_transport=True)

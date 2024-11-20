@@ -23,26 +23,35 @@ gas.TP = T, P
 gas.set_equivalence_ratio(phi, fu, ox)
 gas.constP = P
 
+# GScheme settings
+rtolTail = 1e-3 
+atolTail = 1e-9
+rtolHead = 1e-4
+atolHead = 1e-10
+gamma = 0.25
+reusetol = 2e-1
+# Initial conditions
+t_end = 2.0
+
 #set initial condition
 y0 = np.hstack((gas.Y,gas.T))
 t0 = 0.0
 
-t_end = 2
-
 #integrate ODE with G-Scheme 
 solver = gsc.GScheme(gas)
-solver.set_integrator(cspRtolTail=1e-3,cspAtolTail=1e-9,factor=0.25,jacobiantype='full')
+solver.set_integrator(cspRtolTail=rtolTail,cspAtolTail=atolTail,cspRtolHead=rtolHead,cspAtolHead=atolHead,factor=gamma,jacobiantype='full')
 solver.set_initial_value(y0,t0)
 
 states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'Tail': 0, 'Head':0, 'dt': [0.0]})
 
-starttimegsc = time.time()
 while solver.t < t_end:
     solver.integrate()
     states.append(gas.state, t=solver.t, Tail=solver.T, Head=solver.H, dt=solver.dt)
     #print('%10.3e %10.3f %10.3e %10.3e %10.3e %2i' % (solver.t, solver.y[-1], solver.dt, gas.P, gas.density, solver.M))
-endtimegsc = time.time()
 nupB = gas.nUpdates
+
+print('\n G-Scheme without Reuse profiling:')
+solver.profiling()
 
 #reset the gas state
 gas.TP = T, P
@@ -50,22 +59,21 @@ gas.set_equivalence_ratio(phi, fu, ox)
 
 #integrate ODE with G-Scheme with basis reuse
 solver = gsc.GScheme(gas)
-solver.set_integrator(cspRtolTail=1e-3,cspAtolTail=1e-9,factor=0.25,jacobiantype='full')
-solver.set_initial_value(y0,t0)
+solver.set_integrator(cspRtolTail=rtolTail,cspAtolTail=atolTail,cspRtolHead=rtolHead,cspAtolHead=atolHead,factor=gamma,jacobiantype='full')
 solver.reuse = True
-solver.reuseThr = 2e-1
+solver.reuseThr = reusetol
+solver.set_initial_value(y0,t0)
 
 statesRU = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'Tail': 0, 'Head':0, 'dt': [0.0], 'bs':0, 'norm': [0.0]})
 
-starttimegscreu = time.time()
 while solver.t < t_end:
     solver.integrate()
     statesRU.append(gas.state, t=solver.t, Tail=solver.T, Head=solver.H, dt=solver.dt, bs=solver.basisStatus, norm=solver.normJac)
     #print('%10.3e %10.3f %10.3e %10.3e' % (solver.t, solver.y[-1], solver.dt, solver.normJac))
-endtimegscreu = time.time()
 nupBRU = solver.updateBasis
 
-
+print('\n G-Scheme with Reuse profiling:')
+solver.profiling()
 
 #reset the gas state
 gas.TP = T, P
@@ -78,26 +86,15 @@ sim = ct.ReactorNet([r])
 statesCV = ct.SolutionArray(gas, extra=['t'])
 #sim.set_initial_time(t0)
 
-starttimeCV = time.time()
 while sim.time < t_end:
     sim.step()
     statesCV.append(r.thermo.state, t=sim.time)
-endtimeCV = time.time()
-
-elapsedgsc = endtimegsc - starttimegsc
-print('G-Scheme elapsed time [s]: %10.3e, # of steps taken: %5i, # of kernel evaluations: %5i' % (elapsedgsc,states.t.shape[0],nupB))
-
-elapsedgscreu = endtimegscreu - starttimegscreu
-print('G-Scheme w/ reuse elapsed time [s]: %10.3e, # of steps taken: %5i, # of kernel evaluations: %5i' % (elapsedgscreu,statesRU.t.shape[0],nupBRU))
-
-elapsedCV = endtimeCV - starttimeCV
-print('CVODE elapsed time [s]:      %10.3e, # of steps taken: %5i' % (elapsedCV,statesCV.t.shape[0]))
 
 #plot solution
 t_start_plot = 1
 t_end_plot = 1.15
 print('plotting ODE solution...')
-plt.clf()
+plt.figure(figsize=(12, 8))
 plt.subplot(2, 3, 1)
 plt.plot(statesCV.t, statesCV.T, color = 'blue', label='cvode')
 plt.plot(states.t, states.T, color = 'orange', label='gsc')

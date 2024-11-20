@@ -36,7 +36,7 @@ fvec = []
 Tail = []
 Head = []
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 10:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
@@ -131,4 +131,4 @@ ax.set_xlim([1, 1.15])
 ax.set_ylim([0, 54])
 plt.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
 #plt.show()
-fig.savefig('dimA.png', dpi=800, transparent=False)
+fig.savefig('dim_Active.png', dpi=800, transparent=False)

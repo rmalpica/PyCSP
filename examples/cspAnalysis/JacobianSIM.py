@@ -42,7 +42,7 @@ evals = []
 evalsSIM = []
 
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
@@ -81,6 +81,6 @@ ax.set_ylabel('evals')
 ax.set_ylim([-9, 6])
 ax.set_xlim([0., max(states.t)])
 ax.grid(False)
-ax.legend()
+#ax.legend()
 plt.savefig('jacobianSIM.png',dpi=800)
 

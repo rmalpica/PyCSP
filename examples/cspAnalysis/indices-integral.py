@@ -46,7 +46,7 @@ TSRAPI = []
 TSRTPI = []
 
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)

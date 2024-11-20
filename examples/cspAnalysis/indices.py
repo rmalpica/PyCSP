@@ -45,7 +45,7 @@ TSRAPI = []
 TSRTPI = []
 
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
@@ -86,7 +86,7 @@ def plot(grid,cspindex,thr,gas,outname):
     fig, ax = plt.subplots(figsize=(8,4))
     for idx,(marker,linestyle,color) in zip(range(len(reacIdx)),itertools.product(m_styles,l_styles, colormap)):
         plt.plot(grid[gridIdx], reac[:,idx], color=color, linestyle=linestyle,marker=marker,label=gas.reaction_names()[reacIdx[idx]])
-        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.);
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
  
     ax.set_xlabel('time [s]')
     ax.set_ylabel('Index')
@@ -104,8 +104,8 @@ plot(states.t,Islow[:,spec,:],thr,gas,'IslowTemp.png')
 plot(states.t,Ifast[:,spec,:],thr,gas,'IfastTemp.png')
 
 spec = gas.species_names.index('H2O')
-plot(states.t,Islow[:,spec,:],thr,gas,'IslowNO.png')
-plot(states.t,Ifast[:,spec,:],thr,gas,'IfastNO.png')
+plot(states.t,Islow[:,spec,:],thr,gas,'IslowH2O.png')
+plot(states.t,Ifast[:,spec,:],thr,gas,'IfastH2O.png')
 
 plot(states.t,TSRAPI[:,:],thr,gas,'TSRAPI.png')
 plot(states.t,TSRTPI[:,:],thr,gas,'TSRTPI.png')

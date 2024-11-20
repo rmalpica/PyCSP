@@ -91,7 +91,7 @@ def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     sim = ct.ReactorNet([r])
     states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
     
-    sim.set_initial_time(0.0)
+    sim.initial_time = 0.0
     while sim.time < tend:
         sim.step()
         states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
@@ -114,7 +114,7 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     sim = ct.ReactorNet([r])
     states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
     
-    sim.set_initial_time(0.0)
+    sim.initial_time = 0.0
     while sim.time < tend:
         sim.step()
         states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])

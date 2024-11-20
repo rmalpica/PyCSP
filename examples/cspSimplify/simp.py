@@ -28,7 +28,7 @@ sim = ct.ReactorNet([r])
 time = 0.0
 states = ct.SolutionArray(dtl_mech, 1, extra={'t': [0.0], 'rhsT': [0.0]})
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 1000:
     sim.step()
     states.append(r.thermo.state, t=sim.time, rhsT=dtl_mech.source[-1])
@@ -65,7 +65,7 @@ simp_mech = []
 prev_species = dtl_mech.species_names
 for i in range(len(thr)):
     species, reactions = simplifier.simplify_mechanism(thr[i])
-    simp = csp.CanteraCSP(thermo='IdealGas', kinetics='GasKinetics', species=species, reactions=reactions)
+    simp = csp.CanteraCSP(thermo='ideal-gas', kinetics='gas', species=species, reactions=reactions)
     if simp.species_names != prev_species:  #append only if different from previous one
         simp_mech.append(simp)
         prev_species = simp.species_names
@@ -83,7 +83,7 @@ for i in range(nmech):
     sim = ct.ReactorNet([r])
     states_simp = ct.SolutionArray(simp_mech[i], 1, extra={'t': [0.0], 'rhsT': [0.0]})
     
-    sim.set_initial_time(0.0)
+    sim.initial_time = 0.0
     while sim.time < 1000:
         sim.step()
         states_simp.append(r.thermo.state, t=sim.time, rhsT=simp_mech[i].source[-1])
