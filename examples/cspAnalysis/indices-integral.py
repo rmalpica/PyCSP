@@ -75,17 +75,17 @@ TSRTPI = np.array(TSRTPI)
 grid = states.t
 
 #Islow
-integral = np.reshape([np.trapz(np.abs(Islow[:,i,j]), x=grid) for i in range(gas.nv) for j in range(2*gas.n_reactions)],(gas.nv,2*gas.n_reactions)) 
+integral = np.reshape([np.trapezoid(np.abs(Islow[:,i,j]), x=grid) for i in range(gas.nv) for j in range(2*gas.n_reactions)],(gas.nv,2*gas.n_reactions)) 
 norm = np.sum(np.abs(integral),axis=1)
 IslowIntegralnorm = np.transpose(np.divide(np.transpose(integral), norm, out=np.zeros_like(np.transpose(integral)), where=norm!=0))
 
 #Ifast
-integral = np.reshape([np.trapz(np.abs(Ifast[:,i,j]), x=grid) for i in range(gas.nv) for j in range(2*gas.n_reactions)],(gas.nv,2*gas.n_reactions)) 
+integral = np.reshape([np.trapezoid(np.abs(Ifast[:,i,j]), x=grid) for i in range(gas.nv) for j in range(2*gas.n_reactions)],(gas.nv,2*gas.n_reactions)) 
 norm = np.sum(np.abs(integral),axis=1)
 IfastIntegralnorm = np.transpose(np.divide(np.transpose(integral), norm, out=np.zeros_like(np.transpose(integral)), where=norm!=0))
 
 #TSRAPI
-integral = np.array([np.trapz(np.abs(TSRAPI[:,j]), x=grid) for j in range(2*gas.n_reactions)])
+integral = np.array([np.trapezoid(np.abs(TSRAPI[:,j]), x=grid) for j in range(2*gas.n_reactions)])
 norm = np.sum(np.abs(integral))
 TSRAPIIntegralnorm = np.transpose(np.divide(np.transpose(integral), norm, out=np.zeros_like(np.transpose(integral)), where=norm!=0))
 
@@ -110,6 +110,6 @@ ax.invert_yaxis()  # labels read top-to-bottom
 ax.set_xlabel(indexname)
 ax.set_title(varnames[spec])
 plt.subplots_adjust(left=0.4)
-plt.show()
 
 plt.savefig('IslowTint.png', dpi=800, transparent=False)
+plt.show()
