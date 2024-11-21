@@ -76,7 +76,24 @@ def reorder_evals(ev,times):
     return newev, mask
 
 
-def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
+def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, rtol=1e-9, atol=1e-15):
+    """
+    Integrates the constant-pressure batch reactor.
+
+    Parameters:
+        gas (ct.Solution): Cantera gas object.
+        temperature (float): Initial temperature [K].
+        pressure (float): Initial pressure [Pa].
+        eqratio (float): Equivalence ratio.
+        FuComp (str): Fuel composition.
+        OxComp (str): Oxidizer composition.
+        tend (float): End time for the simulation [s].
+        rtol (float): Relative tolerance for the integrator.
+        atol (float): Absolute tolerance for the integrator.
+        
+    Returns:
+        ct.SolutionArray: Solution array containing states and additional data.
+    """
 
     #set the gas state
     T = temperature
@@ -89,6 +106,8 @@ def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     #integrate ODE
     r = ct.IdealGasConstPressureReactor(gas)
     sim = ct.ReactorNet([r])
+    sim.rtol = rtol
+    sim.atol = atol
     states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
     
     sim.initial_time = 0.0
@@ -98,8 +117,24 @@ def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     return states
 
 
-def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
+def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, rtol=1e-9, atol=1e-15):
+    """
+    Integrates the constant-volume batch reactor.
 
+    Parameters:
+        gas (ct.Solution): Cantera gas object.
+        temperature (float): Initial temperature [K].
+        pressure (float): Initial pressure [Pa].
+        eqratio (float): Equivalence ratio.
+        FuComp (str): Fuel composition.
+        OxComp (str): Oxidizer composition.
+        tend (float): End time for the simulation [s].
+        rtol (float): Relative tolerance for the integrator.
+        atol (float): Absolute tolerance for the integrator.
+        
+    Returns:
+        ct.SolutionArray: Solution array containing states and additional data.
+    """
     #set the gas state
     T = temperature
     P = pressure
@@ -112,6 +147,8 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend):
     #integrate ODE
     r = ct.IdealGasReactor(gas)
     sim = ct.ReactorNet([r])
+    sim.rtol = rtol
+    sim.atol = atol
     states = ct.SolutionArray(gas, 1, extra={'t': [0.0], 'rhsT': [0.0]})
     
     sim.initial_time = 0.0
