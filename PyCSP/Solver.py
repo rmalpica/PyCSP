@@ -202,7 +202,7 @@ class CSPsolver:
         df = pd.DataFrame(data)
         
         extra_rows = [
-            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.RK4_time + self.Qs_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time))/self.integrate_n},
+            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.RK4_time + self.Qs_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))/self.integrate_n},
         ] 
         df = pd.concat([df, pd.DataFrame(extra_rows)], ignore_index=True)
         
