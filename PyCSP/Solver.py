@@ -34,6 +34,8 @@ class CSPsolver:
         self.calcM_n = 0
         self.RK4_time = 0.0
         self.RK4_n = 0
+        self.Qs_time = 0.0
+        self.Qs_n = 0
     
     @property
     def csprtol(self):
@@ -150,7 +152,7 @@ class CSPsolver:
         #calc new M
         self._M = self.CSPexhaustedModes(yman,lam,A,B,tau,self.csprtol,self.cspatol)
         #calc Projection matrix with old basis and new M
-        self._Qs = QsMatrix(A,B,self.M)
+        self._Qs = self.projection_matrix(A,B,self.M)
         #advance in time dydt = Qsg with RK4 to ystar
         self._dt = smart_timescale(tau,self.factor,self.M,lam[self.M],self.dt)
         ystar = self.RK4csp()
@@ -182,14 +184,18 @@ class CSPsolver:
         ynew = self.y - self.Rc
         return ynew
     
+    @profile_cpu_time_and_count("Qs_time", "Qs_n", log=False)
+    def projection_matrix(self,A,B,M):
+        return QsMatrix(A,B,M)
+    
 
     def profiling(self):
         data = {
-            "Function": ["CSP-solver Total", "Basis calculation", "M calculation", "RK4 solve"],
-            "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.RK4_time],
-            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time],
-            "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.RK4_n],
-            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.RK4_time/self.RK4_n],
+            "Function": ["CSP-solver Total", "Basis calculation", "M calculation", "RK4 solve", "Qs Matrix"],
+            "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.RK4_time, self.Qs_time],
+            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time, self.Qs_time*100/self.integrate_time],
+            "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.RK4_n,self.Qs_n],
+            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.RK4_time/self.RK4_n, self.Qs_time/self.Qs_n],
         }
         
         # Create the DataFrame
