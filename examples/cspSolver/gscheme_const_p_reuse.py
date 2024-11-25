@@ -9,19 +9,15 @@ import PyCSP.Functions as cspF
 import PyCSP.GScheme as gsc
 import time
 
-#create gas from original mechanism file hydrogen.cti
+#create gas from mechanism file
 gas = cspF.CanteraCSP('gri30.yaml')
 
+#user-set initial condition
 T = 1000
 P = ct.one_atm
-fu = 'CH4' 
-ox = 'O2:1, N2:3.76'
-phi = 1.0 
-
-#set the gas state
-gas.TP = T, P
-gas.set_equivalence_ratio(phi, fu, ox)
-gas.constP = P
+fuel = 'CH4'
+oxid = 'O2:1, N2:3.76'
+eqratio = 1.0
 
 # GScheme settings
 rtolTail = 1e-3 
@@ -30,8 +26,12 @@ rtolHead = 1e-4
 atolHead = 1e-10
 gamma = 0.25
 reusetol = 2e-1
-# Initial conditions
 t_end = 2.0
+
+#set the gas state
+gas.TP = T, P
+gas.set_equivalence_ratio(eqratio, fuel, oxid)   
+gas.constP = P
 
 #set initial condition
 y0 = np.hstack((gas.Y,gas.T))
@@ -53,11 +53,12 @@ nupB = gas.nUpdates
 print('\n G-Scheme without Reuse profiling:')
 solver.profiling()
 
+#integrate ODE with G-Scheme with basis reuse
+
 #reset the gas state
 gas.TP = T, P
-gas.set_equivalence_ratio(phi, fu, ox)
+gas.set_equivalence_ratio(eqratio, fuel, oxid)
 
-#integrate ODE with G-Scheme with basis reuse
 solver = gsc.GScheme(gas)
 solver.set_integrator(cspRtolTail=rtolTail,cspAtolTail=atolTail,cspRtolHead=rtolHead,cspAtolHead=atolHead,factor=gamma,jacobiantype='full')
 solver.reuse = True
@@ -77,7 +78,7 @@ solver.profiling()
 
 #reset the gas state
 gas.TP = T, P
-gas.set_equivalence_ratio(phi, fu, ox)
+gas.set_equivalence_ratio(eqratio, fuel, oxid)
 
 #integrate ODE with CVODE
 r = ct.IdealGasConstPressureReactor(gas)
@@ -89,12 +90,15 @@ statesCV = ct.SolutionArray(gas, extra=['t'])
 while sim.time < t_end:
     sim.step()
     statesCV.append(r.thermo.state, t=sim.time)
+dt_cvode=statesCV.t[1:]-statesCV.t[0:-1]
 
 #plot solution
 t_start_plot = 1
 t_end_plot = 1.15
 print('plotting ODE solution...')
 plt.figure(figsize=(12, 8))
+
+# Subplot 1: Temperature
 plt.subplot(2, 3, 1)
 plt.plot(statesCV.t, statesCV.T, color = 'blue', label='cvode')
 plt.plot(states.t, states.T, color = 'orange', label='gsc')
@@ -104,6 +108,7 @@ plt.ylabel('Temperature (K)')
 plt.legend(loc="upper left")
 plt.xlim(t_start_plot, t_end_plot)
 
+# Subplot 2: OH Mole Fraction
 plt.subplot(2, 3, 2)
 plt.plot(statesCV.t, statesCV.X[:,gas.species_index('OH')], color = 'blue', label='cvode')
 plt.plot(states.t, states.X[:,gas.species_index('OH')], color = 'orange', label='gsc')
@@ -113,6 +118,7 @@ plt.ylabel('OH Mole Fraction')
 plt.legend(loc="upper left")
 plt.xlim(t_start_plot, t_end_plot)
 
+# Subplot 3: H Mole Fraction
 plt.subplot(2, 3, 3)
 plt.plot(statesRU.t, statesRU.norm)
 calc = statesRU.norm[statesRU.bs == 1] 
@@ -124,6 +130,7 @@ plt.ylabel('norm Jac')
 plt.legend(loc="upper left")
 plt.xlim(t_start_plot, t_end_plot)
 
+# Subplot 4: Modes
 plt.subplot(2, 3, 4)
 plt.plot(states.t, states.Tail, statesRU.t, statesRU.Tail, states.t, states.Head, statesRU.t, statesRU.Head)
 plt.fill_between(states.t, states.Tail, states.Head, color='grey', alpha=0.2)
@@ -132,6 +139,7 @@ plt.xlabel('Time (s)')
 plt.ylabel('Modes')
 plt.xlim(t_start_plot, t_end_plot)
 
+# Subplot 5: Active Modes
 plt.subplot(2, 3, 5)
 plt.plot(states.t, states.Head - states.Tail, color='orange', label = 'gsc')
 plt.plot(statesRU.t, statesRU.Head - statesRU.Tail, color='green', label='gsc-ru')
@@ -140,7 +148,9 @@ plt.ylabel('active modes')
 plt.legend(loc="upper left")
 plt.xlim(t_start_plot, t_end_plot)
 
+# Subplot 6: dt
 plt.subplot(2, 3, 6)
+plt.plot(statesCV.t[0:-1], dt_cvode, label='CVODE Time Step')
 plt.plot(states.t, states.dt,color='orange', label = 'gsc')
 plt.plot(statesRU.t, statesRU.dt, color='green', label='gsc-ru')
 plt.xlabel('Time (s)')

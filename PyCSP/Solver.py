@@ -8,6 +8,8 @@ Created on Tue Jan  5 12:26:32 2021
 import sys
 import numpy as np
 import PyCSP.Functions as cspF
+import pandas as pd
+from PyCSP.profiling_tools import profile_cpu_time_and_count
 
 
 class CSPsolver:
@@ -23,6 +25,15 @@ class CSPsolver:
         self.jacobiantype = 'full'
         self._M = 0
         self.factor = 0.2
+
+        self.integrate_time = 0.0
+        self.integrate_n = 0
+        self.CSPbasis_time = 0.0
+        self.CSPbasis_n = 0
+        self.calcM_time = 0.0
+        self.calcM_n = 0
+        self.RK4_time = 0.0
+        self.RK4_n = 0
     
     @property
     def csprtol(self):
@@ -83,7 +94,8 @@ class CSPsolver:
     def factor(self,value):
         self._factor = value
         
-            
+
+    @profile_cpu_time_and_count("CSPbasis_time", "CSPbasis_n", log=False)       
     def CSPcore(self,y):
         self._gas.set_stateYT(y)
         lam,A,B,f = self._gas.get_kernel()
@@ -91,6 +103,7 @@ class CSPsolver:
         return [A,B,f,lam,tau]
     
     
+    @profile_cpu_time_and_count("calcM_time", "calcM_n", log=False)
     def CSPexhaustedModes(self,y,lam,A,B,tau,rtol,atol):
         self._gas.set_stateYT(y)
         f = np.matmul(B,self._gas.source)
@@ -124,6 +137,7 @@ class CSPsolver:
         self._y = y0
         self._t = t0
     
+    @profile_cpu_time_and_count("integrate_time", "integrate_n", log=False) 
     def integrate(self):
         #calc CSP basis in yold
         self._gas.jacobiantype = self.jacobiantype
@@ -149,7 +163,8 @@ class CSPsolver:
         self._y = ynew
         self._t = self.t + self.dt
     
-                                
+
+    @profile_cpu_time_and_count("RK4_time", "RK4_n", log=False)                              
     def RK4csp(self):
         def f(y):
             Qsg = np.matmul(self.Qs, self.rhs(y))
@@ -167,6 +182,26 @@ class CSPsolver:
         ynew = self.y - self.Rc
         return ynew
     
+
+    def profiling(self):
+        data = {
+            "Function": ["CSP-solver Total", "Basis calculation", "M calculation", "RK4 solve"],
+            "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.RK4_time],
+            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time],
+            "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.RK4_n],
+            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.RK4_time/self.RK4_n],
+        }
+        
+        # Create the DataFrame
+        df = pd.DataFrame(data)
+        
+        extra_rows = [
+            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.RK4_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time))/self.integrate_n},
+        ] 
+        df = pd.concat([df, pd.DataFrame(extra_rows)], ignore_index=True)
+        
+        # Print the table
+        print(df.to_string(index=False))
     
 def QsMatrix(A,B,M):
     ns = A.shape[0]

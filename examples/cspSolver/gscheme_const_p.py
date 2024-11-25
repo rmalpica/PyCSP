@@ -9,16 +9,15 @@ import PyCSP.Functions as cspF
 import PyCSP.GScheme as gsc
 import time
 
-#create gas from original mechanism file hydrogen.cti
+#create gas from mechanism file
 gas = cspF.CanteraCSP('gri30.yaml')
 
-#set the gas state
+#user-set initial condition
 T = 1000
 P = ct.one_atm
-#gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
-gas.TP = T, P
-gas.set_equivalence_ratio(1.0, 'CH4', 'O2:1, N2:3.76')
-gas.constP = P
+fuel = 'CH4'
+oxid = 'O2:1, N2:3.76'
+eqratio = 1.0
 
 # GScheme settings
 rtolTail = 1e-3 
@@ -28,8 +27,12 @@ atolHead = 1e-10
 gamma = 0.25
 reuse = False
 reusetol = 2e-1
-# Initial conditions
 t_end = 2.0
+
+#set the gas state
+gas.TP = T, P
+gas.set_equivalence_ratio(eqratio, fuel, oxid)   
+gas.constP = P
 
 #set initial condition
 y0 = np.hstack((gas.Y,gas.T))
@@ -50,14 +53,12 @@ while solver.t < t_end:
 print('\n G-Scheme profiling:')
 solver.profiling()
 
-#reset the gas state
-T = 1000
-P = ct.one_atm
-#gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
-gas.TP = T, P
-gas.set_equivalence_ratio(1.0, 'CH4', 'O2:1, N2:3.76')
-
 #integrate ODE with CVODE
+
+#reset the gas state
+gas.TP = T, P
+gas.set_equivalence_ratio(eqratio, fuel, oxid)
+
 r = ct.IdealGasConstPressureReactor(gas)
 sim = ct.ReactorNet([r])
 
