@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+recursive-include documentation *
+include logo.png
+include requirements.txt
