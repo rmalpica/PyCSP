@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyCSP-lib"
+version = "1.4.0.post1"
+authors = [
+  { name="Riccardo Malpica Galassi", email="riccardo.malpicagalassi@uniroma1.it" },
+]
+description = "A collection of tools for the Computational Singular Perturbation analysis of chemically reacting flows"
+readme = "README.md"
+requires-python = ">=3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "cantera>=3.0.0",
+    "pandas"
+    # Add more dependencies here
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/rmalpica/PyCSP"
