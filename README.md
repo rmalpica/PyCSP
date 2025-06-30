@@ -2,13 +2,12 @@
 ![Screenshot](logo.png)
 A collection of tools based on Computational Singular Perturbation for the analysis of chemically reacting systems. 
 Requires cantera >= 3.0, numpy, matplotlib. (for older versions of Cantera, i.e. Cantera>=2.5, download release v1.2.1)
-git-lfs is needed to correctly download the example datasets.
 
 Installation in a new environment called "pycsp" with Anaconda (suggested, oterwise skip to #3):
 From PyCSP folder
 1) conda create --name pycsp anaconda --file requirements.txt --channel default --channel anaconda --channel cantera
 2) conda activate pycsp
-3) pip install $PATH_TO_PyCSP_MAIN_FOLDER (e.g. pip install /Users/rmalpica/PyCSP)
+3) pip install PyCSP-lib 
 
 
 Testing:

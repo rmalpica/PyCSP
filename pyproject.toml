@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyCSP-lib"
-version = "1.4.0.post1"
+version = "1.4.0.post2"
 authors = [
   { name="Riccardo Malpica Galassi", email="riccardo.malpicagalassi@uniroma1.it" },
 ]

@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="PyCSP", 
+    name="PyCSP-lib", 
     version="1.4.0",
     author="Riccardo Malpica Galassi",
     author_email="riccardo.malpicagalassi@uniroma1.it",
