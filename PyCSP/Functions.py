@@ -489,7 +489,7 @@ def findM_original(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
     #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
     imPart = evals.imag!=0
     nModes = nv - nEl    #removing conserved modes
-    ewt = setEwt(stateYT,rtol,atol)    
+    ewt = setEwt(stateYT,rtol,atol)[:nv]    
     delw = np.zeros(nv)
     for j in range(nModes-1):          #loop over eligible modes (last excluded)
         taujp1 = tau[j+1]              #timescale of next (slower) mode
@@ -536,7 +536,7 @@ def findM(n_elements, stateYT, evals, Revec, tau, f, rtol, atol):
     nModes = nv - nEl  # Number of non-conserved modes
     
     # Set error weight and precompute its absolute value
-    ewt = np.abs(setEwt(stateYT, rtol, atol))
+    ewt = np.abs(setEwt(stateYT, rtol, atol))[:nv]   #[:nv] required for constrained jacobian that has size smaller than Ns+1, while stateYT is always Ns+1
     
     # Precompute reusable values to minimize redundant computations
     tau_shifted = tau[1:]  # Shifted tau values for efficiency
