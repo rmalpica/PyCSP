@@ -784,24 +784,49 @@ def CSP_importance_indices(A, B, M, Smat, rvec, normtype):
     return [Ifast,Islow]
                 
 def CSP_pointers(A,B):
+    """
+    CSP pointers following Lam & Goussis.
+    - pointers[m,k] = diag_k(Q_m)
+    - Q_m = A_m B_m 
+    - m is the mode index
+    - k is the species index
+    """ 
     nv = A.shape[0]
     pointers = np.array([[np.transpose(A)[spec,mode]*B[mode,spec] for spec in range(nv)] for mode in range(nv)])            
     return pointers
 
 def classify_species(stateYT, rhs, pointers, M, trace):
-    """species classification
     """
+    CSP species classification following Lam & Goussis.
+    - pointers[m,k] = diag_k(Q_m)
+    - M = number of fast modes
+    """
+
     n = len(stateYT)
-    ytol = 1e-20
-    rhstol = 1e-13
-    sort = np.absolute(np.sum(pointers[:,:M],axis=1)).argsort()[::-1]
-    species_type = np.full(n,'slow',dtype=object)
-    species_type[sort[0:M]] = 'fast'
-    species_type[-1] = 'slow'  #temperature is always slow
+    species_type = np.full(n, 'slow', dtype=object)
+
+    # 1. Build Q_hat = sum of fast-mode Q_m
+    Qhat = pointers[:M, :].sum(axis=0)   # shape (n_species,)
+
+    # 2. Sort diagonal entries of Q_hat
+    sorted_idx = np.argsort(Qhat)[::-1]
+
+    # 3. First M species → radical (fast) species
+    radicals = sorted_idx[:M]
+    species_type[radicals] = 'fast'
+
+    # 4. Temperature (last index) is always slow
+    species_type[-1] = 'slow'
+
+    # 5. Trace species identification
     if trace:
-        for i in range(n-1):
-            if (stateYT[i] < ytol and abs(rhs[i]) < rhstol): species_type[i] = 'trace'
+        ytol = 1e-20
+        for i in range(n - 1):
+            if stateYT[i] < ytol and rhs[i] <= 0.0:
+                species_type[i] = 'trace'
+
     return species_type
+
         
 def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype):
     imPart = evals.imag!=0
