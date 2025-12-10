@@ -218,7 +218,7 @@ class TaggedDatabase:
         raise AttributeError(f"'TaggedDatabase' object has no attribute '{name}'")
 
 
-def plot_index_over_time(time, data, threshold, names, output_path, ylabel, title=None, xlim=None, xlabel='time [s]'):
+def plot_index_over_time(time, data, temp, threshold, names, output_path, ylabel, title=None, xlim=None, xlabel='time [s]'):
     """
     Helper function to plot indices over time.
     data: 2D array (time, items)
@@ -226,7 +226,7 @@ def plot_index_over_time(time, data, threshold, names, output_path, ylabel, titl
     threshold: relative threshold (fraction of max absolute value)
     """
     l_styles = ['-','--','-.',':']
-    m_styles = ['','.','o','^','*']
+    m_styles = ['s','.','o','^','*']
     colormap = mpl.cm.Dark2.colors   # Qualitative colormap
     
     # Check dimensions
@@ -250,29 +250,43 @@ def plot_index_over_time(time, data, threshold, names, output_path, ylabel, titl
     # Sort time for plotting
     gridIdx = np.argsort(time)
     
-    fig, ax = plt.subplots(figsize=(8,4))
-    
     # Cycle through styles
     style_cycle = itertools.cycle(itertools.product(m_styles, l_styles, colormap))
+
+    fig, ax1 = plt.subplots(figsize=(8,6))
+    # Temperature (last column of state)
+    ax1.plot(time, temp, 'grey', linestyle='-', label='Temperature')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel('Temperature [K]', color='grey')
+    ax1.tick_params(axis='y', labelcolor='grey')
+    if xlim:
+        ax1.set_xlim(xlim)
+    ax2 = ax1.twinx()
     
     for idx in significant_indices:
         marker, linestyle, color = next(style_cycle)
         label_name = names[idx] if idx < len(names) else f"Index {idx}"
-        plt.plot(time[gridIdx], data[gridIdx, idx], color=color, linestyle=linestyle, marker=marker, label=label_name)
+        ax2.plot(time[gridIdx], data[gridIdx, idx], color=color, linestyle=linestyle, marker=marker, markersize=2, label=label_name,markevery=int(0.02*len(time)))
     
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax2.set_xlabel(xlabel)
+    ax2.set_ylabel(ylabel)
     if title:
-        ax.set_title(title)
+        ax2.set_title(title)
     if xlim:
-        ax.set_xlim(xlim)
-    ax.grid(False)
+        ax2.set_xlim(xlim)
+    ax2.grid(False)
     
     # Legend outside
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.6, box.height])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0, box.width * 0.6, box.height])
+    labels = [line.get_label() for line in ax2.get_lines()]
+    max_len = max(len(lbl) for lbl in labels)
+    if max_len > 60: ax2.legend(
+        loc='lower center',
+        bbox_to_anchor=(0.5, 1.15)
+    )
+    else: ax2.legend(loc='center left', bbox_to_anchor=(1.15, 0.5))
+    plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -295,7 +309,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         print("Plotting API...")
         for i, mode_name in enumerate(mode_names):
             if i < db.API.shape[1]:
-                plot_index_over_time(db.time, db.API[:, i, :], threshold, reaction_names, 
+                plot_index_over_time(db.time, db.API[:, i, :], db.state[:, -1], threshold, reaction_names, 
                                      os.path.join(folder, f'API_{mode_name.replace(" ", "_")}.png'), 'Amplitude Participation Index', title=f'API for {mode_name}', xlim=xlim, xlabel=xlabel)
 
     # 2. Ifast (nvariables images)
@@ -305,7 +319,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         print("Plotting Ifast...")
         for i, var_name in enumerate(species_names):
             if i < db.Ifast.shape[1]:
-                plot_index_over_time(db.time, db.Ifast[:, i, :], threshold, reaction_names, 
+                plot_index_over_time(db.time, db.Ifast[:, i, :], db.state[:, -1], threshold, reaction_names, 
                                      os.path.join(folder, f'Ifast_{var_name}.png'), 'Ifast Index', title=f'Ifast for {var_name}', xlim=xlim, xlabel=xlabel)
 
     # 3. Islow (nvariables images)
@@ -315,7 +329,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         print("Plotting Islow...")
         for i, var_name in enumerate(species_names):
             if i < db.Islow.shape[1]:
-                plot_index_over_time(db.time, db.Islow[:, i, :], threshold, reaction_names, 
+                plot_index_over_time(db.time, db.Islow[:, i, :], db.state[:, -1], threshold, reaction_names, 
                                      os.path.join(folder, f'Islow_{var_name}.png'), 'Islow Index', title=f'Islow for {var_name}', xlim=xlim, xlabel=xlabel)
 
     # 4. Pointers (nvariables images)
@@ -325,7 +339,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         print("Plotting Pointers...")
         for i, var_name in enumerate(species_names):
             if i < db.Pointers.shape[2]:
-                plot_index_over_time(db.time, db.Pointers[:, :gas.nv-gas.n_elements, i], threshold, mode_names, 
+                plot_index_over_time(db.time, db.Pointers[:, :gas.nv-gas.n_elements, i], db.state[:, -1], threshold, mode_names, 
                                      os.path.join(folder, f'Pointers_{var_name}.png'), 'Pointer', title=f'Pointers for {var_name}', xlim=xlim, xlabel=xlabel)
 
     # 5. TPI (nvariables images)
@@ -335,7 +349,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         print("Plotting TPI...")
         for i, mode_name in enumerate(mode_names):
             if i < db.TPI.shape[1]:
-                plot_index_over_time(db.time, db.TPI[:, i, :], threshold, reaction_names, 
+                plot_index_over_time(db.time, db.TPI[:, i, :], db.state[:, -1], threshold, reaction_names, 
                                      os.path.join(folder, f'TPI_{mode_name.replace(" ", "_")}.png'), 'TPI Index', title=f'TPI for {mode_name}', xlim=xlim, xlabel=xlabel)
 
     # 6. TSRAPI (one image)
@@ -343,7 +357,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         folder = os.path.join(output_folder, 'TSR')
         os.makedirs(folder, exist_ok=True)
         print("Plotting TSR API...")
-        plot_index_over_time(db.time, db.tsrApi, threshold, reaction_names, 
+        plot_index_over_time(db.time, db.tsrApi, db.state[:, -1], threshold, reaction_names, 
                              os.path.join(folder, 'TSR_API.png'), 'TSR API Index', title='TSR Amplitude Participation', xlim=xlim, xlabel=xlabel)
 
     # 7. TSRTPI (one image)
@@ -351,7 +365,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         folder = os.path.join(output_folder, 'TSR')
         os.makedirs(folder, exist_ok=True)
         print("Plotting TSR TPI...")
-        plot_index_over_time(db.time, db.tsrTpi, threshold, reaction_names, 
+        plot_index_over_time(db.time, db.tsrTpi, db.state[:, -1], threshold, reaction_names, 
                              os.path.join(folder, 'TSR_TPI.png'), 'TSR TPI Index', title='TSR Timescale Participation', xlim=xlim, xlabel=xlabel)
 
     # 8. Eigenvalues
@@ -361,61 +375,103 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         logevals = np.clip(np.log10(1.0+np.abs(db.evals)),0,100)*np.sign(db.evals.real)
         logevalM = np.clip(np.log10(1.0+np.abs(evalM.real)),0,100)*np.sign(evalM.real)
         
-        fig, ax = plt.subplots(figsize=(6,4))
-        for idx in range(db.evals.shape[1]):
-            ax.plot(db.time, logevals[:,idx], color='black', marker='.', markersize = 5, linestyle = 'None')
-        ax.plot(db.time, logevalM, color='blue', marker='.', markersize = 3, linestyle = 'None', label='lam(M+1)')
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel('log10(|evals|)')
-        ax.set_ylim([-10, 6])
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
         if xlim:
-            ax.set_xlim(xlim)
-        ax.grid(False)
-        ax.legend()
+            ax1.set_xlim(xlim)
+        ax2 = ax1.twinx()
+        for idx in range(db.evals.shape[1]):
+            ax2.plot(db.time, logevals[:,idx], color='black', marker='.', markersize = 5, linestyle = 'None')
+        ax2.plot(db.time, logevalM, color='orange', marker='.', markersize = 3, linestyle = 'None', label='lam(M+1)')
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('log10(|evals|)')
+        ax2.set_ylim([-10, 6])
+        if xlim:
+            ax2.set_xlim(xlim)
+        ax2.grid(False)
+        ax2.legend()
+        plt.tight_layout()
         plt.savefig(os.path.join(output_folder, 'eigenvalues.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
     # 9. Exhausted Modes
     if hasattr(db, 'M'):
         print("Plotting Exhausted Modes...")
-        fig, ax = plt.subplots(figsize=(6,4))
-        ax.plot(db.time, db.M, color='orange')
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel('M')
-        ax.set_ylim([0, gas.nv])
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
         if xlim:
-            ax.set_xlim(xlim)
-        ax.grid(False)
+            ax1.set_xlim(xlim)
+        ax2 = ax1.twinx()
+        ax2.plot(db.time, db.M, color='orange',marker='s',markersize=2)
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('# of exhausted modes (M)', color='orange')
+        ax2.tick_params(axis='y', labelcolor='orange')
+        ax2.set_ylim([0, gas.nv])
+        if xlim:
+            ax2.set_xlim(xlim)
+        ax2.grid(False)
+        plt.tight_layout()
         plt.savefig(os.path.join(output_folder, 'exhausted_modes.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
     # 9bis. Slow Modes
     if hasattr(db, 'M'):
         print("Plotting Slow Modes...")
-        fig, ax = plt.subplots(figsize=(6,4))
-        ax.plot(db.time, gas.nv-gas.n_elements-db.M, color='red')
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel('SIM dimension')
-        ax.set_ylim([0, gas.nv])
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
         if xlim:
-            ax.set_xlim(xlim)
-        ax.grid(False)
+            ax1.set_xlim(xlim)
+        ax2 = ax1.twinx()
+        ax2.plot(db.time, gas.nv-gas.n_elements-db.M, color='red',marker='s',markersize=2)
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('SIM dimension', color='red')
+        ax2.tick_params(axis='y', labelcolor='red')
+        ax2.set_ylim([0, gas.nv])
+        if xlim:
+            ax2.set_xlim(xlim)
+        ax2.grid(False)
+        plt.tight_layout()
         plt.savefig(os.path.join(output_folder, 'slow_modes.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
     # 10. Amplitudes
     if hasattr(db, 'fvec'):
         print("Plotting Amplitudes...")
-        fig, ax = plt.subplots(figsize=(6,4))
-        for idx in range(db.fvec.shape[1]):
-            ax.plot(db.time, np.log10(1e-10+db.fvec[:,idx]), label=f'Mode {idx+1}', marker='.', markersize = 2, linestyle = 'None')
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel('log10(Amplitude)')
-        ax.set_ylim([-8, 10])
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
         if xlim:
-            ax.set_xlim(xlim)
-        ax.grid(False)
-        # ax.legend() # Legend might be too crowded if many modes
+            ax1.set_xlim(xlim)
+        ax2 = ax1.twinx()
+        for idx in range(db.fvec.shape[1]):
+            ax2.plot(db.time, np.log10(1e-10+db.fvec[:,idx]), label=f'Mode {idx+1}', marker='.', markersize = 2, linestyle = 'None')
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('log10(Amplitude)')
+        ax2.set_ylim([-8, 1+np.max(np.log10(1e-10+db.fvec))])
+        if xlim:
+            ax2.set_xlim(xlim)
+        ax2.grid(False)
+        if db.fvec.shape[1] < 10: ax2.legend(loc='center left', bbox_to_anchor=(1.15, 0.5)) # Legend might be too crowded if many modes
+        plt.tight_layout() # Adjust layout to make room for legend
         plt.savefig(os.path.join(output_folder, 'amplitudes.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
