@@ -218,7 +218,7 @@ class TaggedDatabase:
         raise AttributeError(f"'TaggedDatabase' object has no attribute '{name}'")
 
 
-def plot_index_over_time(time, data, temp, threshold, names, output_path, ylabel, title=None, xlim=None, xlabel='time [s]'):
+def plot_index_over_time(time, data, temp, threshold, names, output_path, ylabel, title=None, xlim=None, xlabel='time [s]', frozen=None):
     """
     Helper function to plot indices over time.
     data: 2D array (time, items)
@@ -266,7 +266,17 @@ def plot_index_over_time(time, data, temp, threshold, names, output_path, ylabel
     for idx in significant_indices:
         marker, linestyle, color = next(style_cycle)
         label_name = names[idx] if idx < len(names) else f"Index {idx}"
-        ax2.plot(time[gridIdx], data[gridIdx, idx], color=color, linestyle=linestyle, marker=marker, markersize=2, label=label_name,markevery=int(0.02*len(time)))
+        y = data[:, idx].copy()
+        # Apply frozen mask if provided
+        if frozen is not None:
+            mask = np.asarray(frozen).squeeze()
+            if mask.shape[0] != len(time):
+                raise ValueError(
+                    f"frozen has wrong length {mask.shape[0]}, expected {len(time)}"
+                )
+            y[mask] = np.nan  # break line where frozen is False
+
+        ax2.plot(time[gridIdx], y[gridIdx], color=color, linestyle=linestyle, marker=marker, markersize=2, label=label_name,markevery=int(0.02*len(time)))
     
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel)
@@ -310,7 +320,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         for i, mode_name in enumerate(mode_names):
             if i < db.API.shape[1]:
                 plot_index_over_time(db.time, db.API[:, i, :], db.state[:, -1], threshold, reaction_names, 
-                                     os.path.join(folder, f'API_{mode_name.replace(" ", "_")}.png'), 'Amplitude Participation Index', title=f'API for {mode_name}', xlim=xlim, xlabel=xlabel)
+                                     os.path.join(folder, f'API_{mode_name.replace(" ", "_")}.png'), 'Amplitude Participation Index', title=f'API for {mode_name}', xlim=xlim, xlabel=xlabel, frozen=db.frozen[:,i])
 
     # 2. Ifast (nvariables images)
     if hasattr(db, 'Ifast'):
