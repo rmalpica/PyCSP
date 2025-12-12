@@ -578,7 +578,8 @@ def findM(n_elements, stateYT, evals, Revec, tau, f, rtol, atol):
 
 def setEwt(y, rtol, atol):
     absy = np.abs(y)
-    ewt = np.where(absy >= 1.0e-6, rtol * absy + atol, absy + atol)
+    #ewt = np.where(absy >= 1.0e-6, rtol * absy + atol, absy + atol)
+    ewt = rtol * absy + atol
     return ewt
 
 def modeContribution(a, f, tau, lam):
@@ -631,7 +632,73 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
     H = Tail + 1  #if criterion is never verified, leave one active mode
     #print("-----------")
     return H
+
+
+def detectFrozenModes(M, stateYT, Revec, Levec, Smat, rvec, rtol, atol):
+    """
+    Identifies frozen modes among the M exhausted modes (or all modes, if needed).
+    A mode is frozen if the sum of absolute projected reaction rates is small.
     
+    Parameters:
+    -----------
+    M : int
+        Number of exhausted modes (returned by findM).
+    stateYT : array
+        State vector [Species... , T].
+    Revec : array
+        Right eigenvectors (rows).
+    Levec : array
+        Left eigenvectors (rows).
+    Smat : array
+        Stoichiometric matrix.
+    rvec : array
+        Reaction rates vector.
+    rtol : float
+        Relative tolerance.
+    atol : float
+        Absolute tolerance.
+        
+    Returns:
+    --------
+    frozen_indices : list
+        Indices of modes that are frozen.
+    """
+    nv = len(Revec)
+    nr = Smat.shape[1]
+    
+    # 1. Calculate ewt
+    ewt = np.abs(setEwt(stateYT, rtol, atol))[:nv]
+    
+    frozen_modes = []
+    
+    # Iterate over exhausted modes (0 to M-1)
+    for m in range(M):
+        # 1. Construct Projection Matrix P_m = A_m * B_m
+        # Revec[m] is the m-th eigenvector (column in theory, but stored as rows in PyCSP?)
+        # So Revec[m] is the right eigenvector A_m.
+        # Levec[m] is the left eigenvector B_m.
+        
+        A_m = Revec[m]
+        B_m = Levec[m]
+        P_m = np.outer(A_m, B_m) # Shape (nv, nv)
+        
+        # 2. Compute physical reaction rate vectors S_k * r_k
+        # Smat is (nv, nr), rvec is (nr,)
+        # We want a matrix where col k is S_k * r_k
+        R_vecs = Smat * rvec[np.newaxis, :] # Shape (nv, nr)
+        
+        # 3. Project reaction rates: P_m @ (S_k * r_k)
+        Proj_R_vecs = np.matmul(P_m, R_vecs) # Shape (nv, nr)
+        
+        # 4. Sum of absolute values of projected rates
+        max_delw = np.sum(np.abs(Proj_R_vecs), axis=1) # Shape (nv,)
+        
+        # 5. Check condition
+        if np.all(max_delw < ewt):
+            frozen_modes.append(m)
+            
+    bool_frozen = np.isin(np.arange(len(stateYT)), frozen_modes)
+    return bool_frozen  
 
 """ ~~~~~~~~~~~~~~ TSR ~~~~~~~~~~~~~~~~
 """
@@ -927,4 +994,4 @@ def add_transport(rhs,Levec,Smat,rvec,rhs_convYT,rhs_diffYT):
     #    raise ValueError('Mismatch between numerical extended RHS and S.r')
         
     return rhs_ext, h, Smat_ext, rvec_ext 
-    
+
