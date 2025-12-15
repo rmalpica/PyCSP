@@ -62,9 +62,13 @@ for step in range(0,len(states.t)):
     
     # Get kernel data
     lam, R, L, f = gas.get_kernel()
+    # Detect frozen modes
+    frozen = csp.detectFrozenModes(gas.nv-gas.n_elements, stateYT, R, L, gas.generalized_Stoich_matrix, gas.R_vector, 1e-4, 1e-12)
+    # Detect exhusted modes
+    M = gas.calc_exhausted_modes()
     # Get indexes
     api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=True,Impo=True,species_type=True,TPI=False)
-    
+        
     # Store everything in the database using keyword arguments
     db.store(
         time=states.t[step],
@@ -73,7 +77,9 @@ for step in range(0,len(states.t)):
         Revec=R,
         Levec=L,
         fvec=f,
-        M=gas.calc_exhausted_modes(),
+        M=M,
+        frozen=frozen,
+        tsr = gas.calc_TSR(),
         API = api,
         #TPI = tpi,  #TPI can be expensive if number of species is large
         Ifast = ifast,

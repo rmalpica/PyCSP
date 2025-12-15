@@ -320,7 +320,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         for i, mode_name in enumerate(mode_names):
             if i < db.API.shape[1]:
                 plot_index_over_time(db.time, db.API[:, i, :], db.state[:, -1], threshold, reaction_names, 
-                                     os.path.join(folder, f'API_{mode_name.replace(" ", "_")}.png'), 'Amplitude Participation Index', title=f'API for {mode_name}', xlim=xlim, xlabel=xlabel, frozen=db.frozen[:,i])
+                                     os.path.join(folder, f'API_{mode_name.replace(" ", "_")}.png'), 'Amplitude Participation Index', title=f'API for {mode_name}', xlim=xlim, xlabel=xlabel, **({"frozen": db.frozen[:, i]} if hasattr(db, 'frozen') else {}))
 
     # 2. Ifast (nvariables images)
     if hasattr(db, 'Ifast'):
@@ -407,6 +407,39 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         ax2.legend()
         plt.tight_layout()
         plt.savefig(os.path.join(output_folder, 'eigenvalues.png'), dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+    # 8.bis Eigenvalues with tsr
+    if hasattr(db, 'evals') and hasattr(db, 'M') and hasattr(db, 'tsr'):
+        print("Plotting Eigenvalues with tsr...")
+        evalM = select_eval(db.evals, db.M)
+        logevals = np.clip(np.log10(1.0+np.abs(db.evals)),0,100)*np.sign(db.evals.real)
+        logevalM = np.clip(np.log10(1.0+np.abs(evalM.real)),0,100)*np.sign(evalM.real)
+        logtsr = np.clip(np.log10(1.0+np.abs(db.tsr)),0,100)*np.sign(db.tsr.real)
+        
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
+        if xlim:
+            ax1.set_xlim(xlim)
+        ax2 = ax1.twinx()
+        for idx in range(db.evals.shape[1]):
+            ax2.plot(db.time, logevals[:,idx], color='black', marker='.', markersize = 5, linestyle = 'None')
+        ax2.plot(db.time, logevalM, color='orange', marker='.', markersize = 3, linestyle = 'None', label='lam(M+1)')
+        ax2.plot(db.time, logtsr, color='green', marker='.', markersize = 2, linestyle = 'None', label='tsr')
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('log10(|evals|)')
+        ax2.set_ylim([-10, 6])
+        if xlim:
+            ax2.set_xlim(xlim)
+        ax2.grid(False)
+        ax2.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_folder, 'eigenvalues_tsr.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
     # 9. Exhausted Modes
@@ -531,3 +564,126 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         plt.tight_layout() # Adjust layout to make room for legend
         plt.savefig(os.path.join(output_folder, 'state_evolution.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
+
+
+    # 12. Map of modes
+    if hasattr(db, 'frozen') and hasattr(db, 'M'):
+        print("Plotting Modes Map...")
+       
+        from matplotlib.colors import ListedColormap, BoundaryNorm
+        import matplotlib.patches as mpatches
+
+        # --------------------------------------------------
+        # INPUT DATA (assumed)
+        # db.frozen : shape (n_times, n_modes) or (n_times, 7)
+        # db.time   : shape (n_times,)
+        # db.M      : shape (n_times,)
+        # --------------------------------------------------
+
+        # 1) put modes on the y-axis: transpose
+        frozen = db.frozen.T                 # shape = (n_modes, n_times)
+        n_modes, n_times = frozen.shape
+        times = db.time
+        M = db.M
+
+        # --------------------------------------------------
+        # 2) build x-edges from non-uniform times
+        # --------------------------------------------------
+        if n_times > 1:
+            dt_left  = times[1]  - times[0]
+            dt_right = times[-1] - times[-2]
+        else:
+            dt_left = dt_right = 1.0
+
+        time_edges = np.empty(n_times + 1)
+        time_edges[1:-1] = 0.5 * (times[:-1] + times[1:])
+        time_edges[0]    = times[0]  - 0.5 * dt_left
+        time_edges[-1]   = times[-1] + 0.5 * dt_right
+
+        # --------------------------------------------------
+        # 3) y-edges: one row per mode
+        # --------------------------------------------------
+        y_edges = np.arange(n_modes + 1)
+
+        # --------------------------------------------------
+        # 4) Build layered mode map
+        #     0 = slow
+        #     1 = exhausted
+        #     2 = frozen
+        # --------------------------------------------------
+        mode_indices = np.arange(n_modes)[:, None]   # (n_modes, 1)
+
+        layered_map = np.zeros((n_modes, n_times), dtype=int)
+
+        # exhausted modes: mode index < M[t]
+        layered_map[mode_indices < M[None, :]] = 1
+
+        # frozen modes override everything
+        layered_map[frozen.astype(bool)] = 2
+
+        # --------------------------------------------------
+        # 5) colormap
+        # --------------------------------------------------
+        cmap = ListedColormap([
+            "#ADD8E6",  # slow (light blue)
+            "#FFA500",  # exhausted (orange)
+            "#FF0000",  # frozen (red)
+        ])
+        norm = BoundaryNorm(
+            boundaries=[-0.5, 0.5, 1.5, 2.5],
+            ncolors=cmap.N,
+        )
+        # --------------------------------------------------
+        # 6) plot
+        # --------------------------------------------------
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        pcm = ax.pcolormesh(
+            time_edges,
+            y_edges,
+            layered_map,
+            cmap=cmap,
+            norm=norm,
+            shading="flat",
+        )
+
+        # --------------------------------------------------
+        # 7) y labels: mode numbers 1..n_modes
+        # --------------------------------------------------
+        ax.set_yticks(np.arange(n_modes) + 0.5)
+        ax.set_yticklabels(np.arange(1, n_modes + 1))
+
+        # --------------------------------------------------
+        # 8) x ticks
+        # --------------------------------------------------
+        ax.xaxis.set_major_locator(plt.MaxNLocator(nbins=10))
+        ax.xaxis.set_major_formatter(plt.FormatStrFormatter("%.3g"))
+
+        ax.set_xlim(xlim)
+        ax.set_ylim([0, gas.nv - gas.n_elements])
+
+        # --------------------------------------------------
+        # 9) labels & title
+        # --------------------------------------------------
+        ax.set_xlabel("x [m]")
+        ax.set_ylabel("Mode number")
+        ax.set_title("Modes map (slow / exhausted / frozen)")
+
+        # --------------------------------------------------
+        # 10) legend
+        # --------------------------------------------------
+        legend_patches = [
+            mpatches.Patch(color="#ADD8E6", label="Slow modes"),
+            mpatches.Patch(color="#FFA500", label="Exhausted modes"),
+            mpatches.Patch(color="#FF0000", label="Frozen modes"),
+        ]
+
+        ax.legend(handles=legend_patches, loc="upper right", frameon=True)
+
+        # --------------------------------------------------
+        # 11) save & close
+        # --------------------------------------------------
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_folder, 'modes_map.png'), dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
