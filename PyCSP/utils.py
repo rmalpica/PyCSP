@@ -625,9 +625,9 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # 5) colormap
         # --------------------------------------------------
         cmap = ListedColormap([
-            "#ADD8E6",  # slow (light blue)
-            "#FFA500",  # exhausted (orange)
-            "#FF0000",  # frozen (red)
+            "#F5C26B",  # slow (light blue)
+            "#F07857",  # exhausted (orange)
+            "#53BDA5",  # frozen (red)
         ])
         norm = BoundaryNorm(
             boundaries=[-0.5, 0.5, 1.5, 2.5],
@@ -636,9 +636,10 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # --------------------------------------------------
         # 6) plot
         # --------------------------------------------------
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        
 
-        pcm = ax.pcolormesh(
+        pcm = ax1.pcolormesh(
             time_edges,
             y_edges,
             layered_map,
@@ -650,35 +651,48 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # --------------------------------------------------
         # 7) y labels: mode numbers 1..n_modes
         # --------------------------------------------------
-        ax.set_yticks(np.arange(n_modes) + 0.5)
-        ax.set_yticklabels(np.arange(1, n_modes + 1))
+        ax1.set_yticks(np.arange(n_modes) + 0.5)
+        ax1.set_yticklabels(np.arange(1, n_modes + 1))
 
         # --------------------------------------------------
         # 8) x ticks
         # --------------------------------------------------
-        ax.xaxis.set_major_locator(plt.MaxNLocator(nbins=10))
-        ax.xaxis.set_major_formatter(plt.FormatStrFormatter("%.3g"))
+        ax1.xaxis.set_major_locator(plt.MaxNLocator(nbins=10))
+        ax1.xaxis.set_major_formatter(plt.FormatStrFormatter("%.3g"))
 
-        ax.set_xlim(xlim)
-        ax.set_ylim([0, gas.nv - gas.n_elements])
+        if xlim:
+            ax1.set_xlim(xlim)
+        ax1.set_ylim([0, gas.nv - gas.n_elements])
 
         # --------------------------------------------------
         # 9) labels & title
         # --------------------------------------------------
-        ax.set_xlabel("x [m]")
-        ax.set_ylabel("Mode number")
-        ax.set_title("Modes map (slow / exhausted / frozen)")
+        ax1.set_xlabel("x [m]")
+        ax1.set_ylabel("Mode number")
+        ax1.set_title("Modes map (slow / exhausted / frozen)")
 
         # --------------------------------------------------
         # 10) legend
         # --------------------------------------------------
         legend_patches = [
-            mpatches.Patch(color="#ADD8E6", label="Slow modes"),
-            mpatches.Patch(color="#FFA500", label="Exhausted modes"),
-            mpatches.Patch(color="#FF0000", label="Frozen modes"),
+            mpatches.Patch(color="#F5C26B", label="Slow modes"),
+            mpatches.Patch(color="#F07857", label="Exhausted modes"),
+            mpatches.Patch(color="#53BDA5", label="Frozen modes"),
         ]
 
-        ax.legend(handles=legend_patches, loc="upper right", frameon=True)
+        ax1.legend(handles=legend_patches, loc="upper left", frameon=True)
+
+        ax2 = ax1.twinx()
+
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax2.plot(db.time, temp, 'grey', linestyle='-', label='Temperature')
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('Temperature [K]', color='grey')
+        ax2.tick_params(axis='y', labelcolor='grey')
+        if xlim:
+            ax2.set_xlim(xlim)
+        
 
         # --------------------------------------------------
         # 11) save & close
