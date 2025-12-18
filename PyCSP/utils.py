@@ -701,3 +701,202 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         plt.savefig(os.path.join(output_folder, 'modes_map.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
+    # 13. Rate of progress
+    if hasattr(db, 'rates'):
+        print("Plotting Rate of progress...")
+        fig, ax1 = plt.subplots(figsize=(8,5))
+        
+        # Temperature (last column of state)
+        temp = db.state[:, -1]
+        ax1.plot(db.time, temp, 'grey', label='Temperature',marker='o',markersize=2,markevery=int(0.02*len(db.time)))
+        ax1.set_xlabel(xlabel)
+        ax1.set_ylabel('Temperature [K]', color='grey')
+        ax1.tick_params(axis='y', labelcolor='grey')
+        if xlim:
+            ax1.set_xlim(xlim)
+            
+        ax2 = ax1.twinx()
+        
+        # Rate of progress
+        rate_data = db.RATE[:,:]
+        
+        l_styles = ['-','--','-.',':']
+        m_styles = ['','.','o','^','*']
+        colormap = mpl.cm.tab10.colors
+        style_cycle = itertools.cycle(itertools.product(m_styles, l_styles, colormap))
+        
+        for idx in major_indices:
+            marker, linestyle, color = next(style_cycle)
+            label_name = gas.reaction_names()[idx]
+            ax2.plot(db.time, rate_data[:, idx], color=color, linestyle=linestyle, marker=marker, label=label_name)
+            
+        ax2.set_ylabel('Rate of progress [kmol/m3/s]', color='k')
+        ax2.set_yscale('log')
+        ax2.set_ylim(bottom=1e-10) # Set a reasonable lower bound for log scale
+        ax2.tick_params(axis='y', labelcolor='k')
+        
+        # Combined legend
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines1 + lines2, labels1 + labels2, loc='center left', bbox_to_anchor=(1.15, 0.5))
+        
+        plt.tight_layout() # Adjust layout to make room for legend
+        plt.savefig(os.path.join(output_folder, 'rate_of_progress.png'), dpi=800, bbox_inches='tight')
+        plt.close(fig)
+
+    # 14. RHS
+    if hasattr(db, 'rhs'):
+        print("Plotting RHS...")
+        fig, ax = plt.subplots(figsize=(8,5))
+                
+        # Rate of progress
+        rhs_data = db.RHS[:,:]
+        splitRHS_data = db.SplitRHS[:,:]
+
+        l_styles = ['-','--','-.',':']
+        m_styles = ['','.','o','^','*']
+        colormap = mpl.cm.tab10.colors
+        style_cycle = itertools.cycle(itertools.product(m_styles, l_styles, colormap))
+
+        for idx in major_indices:
+            marker, linestyle, color = next(style_cycle)
+            label_name = gas.species_names[idx]
+            ax.plot(db.time, rhs_data[:, idx], color=color, linestyle=linestyle, marker=marker, label=label_name)
+            ax.plot(db.time, splitRHS_data[:, idx], color='black', linestyle='--')
+        ax.plot(db.time, rhs_data[:, -1], color='gold', linestyle=linestyle, marker=marker, label='T')
+        ax.plot(db.time, splitRHS_data[:, -1], color='black', linestyle='--')
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('RHS', color='k')
+        ax.set_yscale('log')
+        ax.tick_params(axis='y', labelcolor='k')
+        if xlim:
+            ax.set_xlim(xlim)
+        ax.legend(loc='best')
+        
+        plt.tight_layout() # Adjust layout to make room for legend
+        plt.savefig(os.path.join(output_folder, 'rhs.png'), dpi=800, bbox_inches='tight')
+        plt.close(fig)
+
+    # 15. Map of fast/slow species
+    if hasattr(db, 'species_type') and hasattr(db, 'time'):
+        print("Plotting Species Map...")
+       
+        from matplotlib.colors import ListedColormap, BoundaryNorm
+        import matplotlib.patches as mpatches
+
+        # --------------------------------------------------
+        # INPUT DATA (assumed)
+        # db.species_type : shape (n_times, n_species)
+        # db.time   : shape (n_times,)
+        # --------------------------------------------------
+
+        # 1) put modes on the y-axis: transpose
+        species = db.species_type.T                 # shape = (n_species, n_times)
+        n_species, n_times = species.shape
+        times = db.time
+
+        # --------------------------------------------------
+        # 2) build x-edges from non-uniform times
+        # --------------------------------------------------
+        if n_times > 1:
+            dt_left  = times[1]  - times[0]
+            dt_right = times[-1] - times[-2]
+        else:
+            dt_left = dt_right = 1.0
+
+        time_edges = np.empty(n_times + 1)
+        time_edges[1:-1] = 0.5 * (times[:-1] + times[1:])
+        time_edges[0]    = times[0]  - 0.5 * dt_left
+        time_edges[-1]   = times[-1] + 0.5 * dt_right
+
+        # --------------------------------------------------
+        # 3) y-edges: one row per species
+        # --------------------------------------------------
+        y_edges = np.arange(n_species + 1)
+
+        # --------------------------------------------------
+        # 4) Build layered species map
+        #     0 = slow
+        #     1 = fast
+        # --------------------------------------------------
+        layered_map = np.zeros((n_species, n_times), dtype=int)
+
+        #fast species
+        layered_map[species == 'fast'] = 1
+
+        # --------------------------------------------------
+        # 5) colormap
+        # --------------------------------------------------
+        cmap = ListedColormap(["lightskyblue",     # slow (blue)
+                               "#B6A5D8",        # fast (red)
+                               ])
+
+        norm = BoundaryNorm(
+            boundaries=[0, 1.0],
+            ncolors=cmap.N,
+        )
+
+        # --------------------------------------------------
+        # 6) plot
+        # --------------------------------------------------
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        pcm = ax.pcolormesh(
+            time_edges,
+            y_edges,
+            layered_map,
+            cmap=cmap,
+            norm=norm,
+            shading="flat",
+        )
+
+        # --------------------------------------------------
+        # 7) y labels: species_names
+        # --------------------------------------------------
+        ax.set_yticks(np.arange(gas.n_species) + 0.5)
+        ax.set_yticklabels(gas.species_names[i] for i in range(gas.n_species))
+
+        # --------------------------------------------------
+        # 8) x ticks
+        # --------------------------------------------------
+        ax.xaxis.set_major_locator(plt.MaxNLocator(nbins=10))
+        ax.xaxis.set_major_formatter(plt.FormatStrFormatter("%.3g"))
+
+        ax.set_xlim(xlim)
+        ax.set_ylim([0, gas.n_species])
+
+        # --------------------------------------------------
+        # 9) labels & title
+        # --------------------------------------------------
+        ax.set_xlabel("x [m]")
+        ax.set_ylabel("Species name")
+        ax.set_title("Species map (fast / slow)")
+
+        # --------------------------------------------------
+        # 10) legend
+        # --------------------------------------------------
+        legend_patches = [
+            mpatches.Patch(color="lightskyblue", label="Slow species"),
+            mpatches.Patch(color="#B6A5D8", label="Fast species"),
+        ]
+
+        ax.legend(handles=legend_patches, loc="upper left", frameon=True)
+
+        # --------------------------------------------------
+        # 11) temperature profile
+        # --------------------------------------------------
+
+        temp = db.state[:,-1]
+        ax2 = ax.twinx()
+        ax2.plot(db.time, temp, '#1B2230', linestyle='-', label = 'Temperature')
+        ax2.set_xlabel(xlabel)
+        ax2.set_ylabel('Temperature [K]', color='#1B2230')
+        ax2.tick_params(axis='y', labelcolor='#1B2230')
+
+        # --------------------------------------------------
+        # 12) save & close
+        # --------------------------------------------------
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_folder, 'species_map.png'), dpi=800, bbox_inches='tight')
+        plt.close(fig)
