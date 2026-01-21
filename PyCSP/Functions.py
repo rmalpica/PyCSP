@@ -622,9 +622,9 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
         delw = delw + 0.5*dt*dt*Aj*fj*np.abs(lamj)    #contribution of j-th mode to all vars           
         if np.any(np.abs(delw) > ewt):
             if j==nModes:
-                H = nModes  
+                H = nModes + 1  #in this case, H is nv - nEl. Hence, last available mode is slow. 
             else:
-                H = j+1 if (imPart[j] and imPart[j+1] and evals[j].real==evals[j+1].real) else j    #if j is the second of a pair, move fwd by 2                    
+                H = j+2 if (imPart[j] and imPart[j+1] and evals[j].real==evals[j+1].real) else j+1    #if j is the second of a pair, move fwd by 2                    
             return H
 
     #print("No modes are active")
