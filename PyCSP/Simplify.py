@@ -63,7 +63,7 @@ class CSPsimplify:
     @csprtol.setter
     def csprtol(self,value):
         self._csprtol = value
-        self._gas.csprtol = value
+        self._gas.rtol = value
     
     @property
     def cspatol(self):
@@ -72,7 +72,7 @@ class CSPsimplify:
     @cspatol.setter
     def cspatol(self,value):
         self._cspatol = value
-        self._gas.cspatol = value
+        self._gas.atol = value
              
     @property
     def problemtype(self):
