@@ -1390,6 +1390,7 @@
 <li>TPI are not available for <code>jacobiantype='constrained'</code> (the thermal correction is not split by reaction): a <code>NotImplementedError</code> is raised instead of returning inconsistent values.</li>
 <li><code>utils.save_CSP_plots</code>: fixed crashes with short time series, and the rate-of-progress and RHS plots.</li>
 <li><code>CSPsimplify.get_tsrtarget</code> no longer fails for <code>TSRtol = 1</code>.</li>
+<li>The order of the two eigenvalues of a complex-conjugate pair (negative imaginary part first) no longer depends on the platform's sorting algorithm.</li>
 <li><code>CSPsolver</code>/<code>GScheme.set_integrator</code> raise a <code>ValueError</code> on unknown keywords instead of exiting the interpreter; <code>profiling()</code> no longer divides by zero.</li>
 </ul>
 <p>New features and changes:</p>
