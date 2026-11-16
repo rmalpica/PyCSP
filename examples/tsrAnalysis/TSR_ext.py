@@ -124,7 +124,7 @@ thr = 0.15
 TSRreacIdx = np.unique(np.nonzero(np.abs(TSRAPI) > thr)[1])  #indexes of processes with TSRapi > thr
 TSRreac = TSRAPI[:,TSRreacIdx]
 
-source_cmap=plt.cm.get_cmap('tab20')
+source_cmap=plt.get_cmap('tab20')
 c_list=[]
 for color in np.arange(0,1.05,0.05):
     c_list.append( source_cmap(color) )

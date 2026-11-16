@@ -5,7 +5,6 @@ Created on Tue Jan  5 12:26:32 2021
 
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-import sys
 import numpy as np
 import PyCSP.Functions as cspF
 import pandas as pd
@@ -118,7 +117,6 @@ class CSPsolver:
     
     def rhs(self,y):
         self._gas.set_stateYT(y)
-        dydt = np.zeros(self._gas.nv) 
         dydt = self._gas.source
         return dydt
         
@@ -133,7 +131,7 @@ class CSPsolver:
             elif(key == 'jacobiantype'):
                 self.jacobiantype = value
             else:
-                sys.exit('Unknown keyword in set_integrator')
+                raise ValueError('Unknown keyword in set_integrator --> %s' % key)
                     
     def set_initial_value(self,y0,t0):
         self._y = y0
@@ -193,16 +191,16 @@ class CSPsolver:
         data = {
             "Function": ["CSP-solver Total", "Basis calculation", "M calculation", "RK4 solve", "Qs Matrix"],
             "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.RK4_time, self.Qs_time],
-            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time, self.Qs_time*100/self.integrate_time],
+            "Time %": [_safe_div(self.integrate_time*100, self.integrate_time), _safe_div(self.CSPbasis_time*100, self.integrate_time), _safe_div(self.calcM_time*100, self.integrate_time), _safe_div(self.RK4_time*100, self.integrate_time), _safe_div(self.Qs_time*100, self.integrate_time)],
             "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.RK4_n,self.Qs_n],
-            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.RK4_time/self.RK4_n, self.Qs_time/self.Qs_n],
+            "Time per Call (s)": [_safe_div(self.integrate_time, self.integrate_n), _safe_div(self.CSPbasis_time, self.CSPbasis_n), _safe_div(self.calcM_time, self.calcM_n), _safe_div(self.RK4_time, self.RK4_n), _safe_div(self.Qs_time, self.Qs_n)],
         }
         
         # Create the DataFrame
         df = pd.DataFrame(data)
         
         extra_rows = [
-            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.RK4_time + self.Qs_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))/self.integrate_n},
+            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.RK4_time + self.Qs_time), "Time %": _safe_div((self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time))*100, self.integrate_time), "Calls": self.integrate_n, "Time per Call (s)": _safe_div(self.integrate_time - (self.CSPbasis_time + self.calcM_time  + self.RK4_time + self.Qs_time), self.integrate_n)},
         ] 
         df = pd.concat([df, pd.DataFrame(extra_rows)], ignore_index=True)
         
@@ -240,3 +238,7 @@ def smart_timescale(tau,factor,M,lamM,dtold):
     
     
     
+
+
+def _safe_div(a, b):
+    return a/b if b != 0 else 0.0

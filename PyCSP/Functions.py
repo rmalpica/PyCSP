@@ -205,7 +205,7 @@ class CanteraCSP(CanteraThermoKinetics):
             self.update_kernel()
             self._changed = False
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
-        TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
+        TSR, _ = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         if getM:
             return [TSR, M]
         else:
@@ -217,10 +217,15 @@ class CanteraCSP(CanteraThermoKinetics):
         Default value is amplitude.
         Other optional arguments are rtol and atol for the calculation of M.
         If not provided, uses default or previously set values.
-        The calculated value of M can be retrieved by passing
-        the optional argument getM=True"""
+        The TSR value can be retrieved by passing getTSR=True, in which case
+        the method returns (TSR, indices).
+        Optional norm_cut (scalar or nv-long array, default None): with
+        index_norm='abs', modes whose CSP indices have a sum of absolute
+        contributions smaller than norm_cut get zero indices (units of that sum:
+        1/s for type='timescale', the mode-amplitude units for type='amplitude')."""
         getTSR = False
         useTPI = False
+        norm_cut = None
         rtol = self.rtol
         atol = self.atol
         for key, value in kwargs.items():
@@ -230,6 +235,8 @@ class CanteraCSP(CanteraThermoKinetics):
                 atol = value
             elif (key == 'getTSR'): 
                 getTSR = value
+            elif (key == 'norm_cut'): 
+                norm_cut = value
             elif (key == 'type'): 
                 if(value == 'timescale'):
                     useTPI = True
@@ -246,10 +253,10 @@ class CanteraCSP(CanteraThermoKinetics):
         TSR, weights = findTSR(self.n_elements,self.rhs,self.evals,self.Revec,self.f,M)
         TSRidx = TSRindices(weights, self.evals)
         if (useTPI):
-            JacK = self.jac_contribution()
-            CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm)
+            JacK = self._jac_contribution_for_TPI()
+            CSPidx = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm, norm_cut)
         else:
-            CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm)
+            CSPidx = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm, norm_cut)
         TSRind = TSR_participation_indices(TSRidx, CSPidx, self.index_norm)
         if getTSR:
             return TSR, TSRind
@@ -258,11 +265,19 @@ class CanteraCSP(CanteraThermoKinetics):
         
         
     def calc_CSPindices(self,**kwargs):
-        """Computes number of exhausted modes (M) and the CSP Indices. 
+        """Computes number of exhausted modes (M) and the CSP Indices.
+        Boolean keywords select the indices to compute (all default False):
+        API (amplitude participation), TPI (timescale participation),
+        Impo (fast/slow importance), species_type (fast/slow/trace species).
+        Returns [API, TPI, Ifast, Islow, species_type] (None for those not
+        requested), plus M if getM=True.
         Optional arguments are rtol and atol for the calculation of M.
         If not provided, uses default or previously set values.
-        The calculated value of M can be retrieved by passing
-        the optional argument getM=True"""
+        Optional norm_cut (scalar or nv-long array, default None): with
+        index_norm='abs', rows (modes for API/TPI, variables for Ifast/Islow)
+        whose sum of absolute contributions is smaller than norm_cut are set
+        to zero instead of being normalized (units of that sum: the rate of
+        the mode amplitude or variable, 1/s for TPI)."""
         getM = False
         getAPI = False
         getImpo = False
@@ -273,6 +288,7 @@ class CanteraCSP(CanteraThermoKinetics):
         Islow = None
         species_type = None
         TPI = None
+        norm_cut = None
         rtol = self.rtol
         atol = self.atol
         for key, value in kwargs.items():
@@ -290,6 +306,8 @@ class CanteraCSP(CanteraThermoKinetics):
                 getspeciestype = value
             elif (key == 'TPI'): 
                 getTPI = value
+            elif (key == 'norm_cut'): 
+                norm_cut = value
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if self.is_changed(): 
@@ -298,14 +316,14 @@ class CanteraCSP(CanteraThermoKinetics):
         M = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,self.f,rtol,atol)
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector
-        if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm)
-        if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec, self.Levec, M, Smat, rvec, self.index_norm)
+        if getAPI: API = CSP_amplitude_participation_indices(self.Levec, Smat, rvec, self.index_norm, norm_cut)
+        if getImpo: Ifast,Islow = CSP_importance_indices(self.Revec, self.Levec, M, Smat, rvec, self.index_norm, norm_cut)
         if getspeciestype: 
             pointers = CSP_pointers(self.Revec,self.Levec)
             species_type = classify_species(self.stateYT(), self.rhs, pointers, M, self.classify_traces)
         if getTPI:
-            JacK = self.jac_contribution()
-            TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm)
+            JacK = self._jac_contribution_for_TPI()
+            TPI = CSP_timescale_participation_indices(self.n_reactions, JacK, self.evals, self.Revec, self.Levec, self.index_norm, norm_cut)
         if getM:
             return [API, TPI, Ifast, Islow, species_type, M]
         else:
@@ -313,8 +331,8 @@ class CanteraCSP(CanteraThermoKinetics):
         
     def calc_extended_TSR(self,**kwargs):
         """Computes number of Extended exhausted modes (Mext) and the extended TSR. 
-        Caller must provide either a diffusion rhs with the keywork rhs_diffYT
-        or a convection rhs with the keywork rhs_convYT, or both.
+        Caller must provide either a diffusion rhs with the keyword diff
+        or a convection rhs with the keyword conv, or both (nv-long arrays).
         Optional arguments are rtol and atol for the calculation of Mext.
         If not provided, uses default or previously set values.
         The calculated value of Mext can be retrieved by passing
@@ -344,17 +362,17 @@ class CanteraCSP(CanteraThermoKinetics):
             else:
                 raise ValueError("unknown argument --> %s" %key)
         if(len(rhs_convYT)!=nv):
-            raise ValueError("Check dimension of Convection rhs. Should be %d", nv)
+            raise ValueError("Check dimension of Convection rhs. Should be %d" % nv)
         if(len(rhs_diffYT)!=nv):
-            raise ValueError("Check dimension of Diffusion rhs. Should be %d", nv)
+            raise ValueError("Check dimension of Diffusion rhs. Should be %d" % nv)
 
             
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector    
-        rhs_ext, h, Smat_ext, rvec_ext = add_transport(self.rhs,self.Levec,Smat,rvec,rhs_convYT,rhs_diffYT)
+        rhs_ext, h, _, _ = add_transport(self.rhs,self.Levec,Smat,rvec,rhs_convYT,rhs_diffYT)
         
         Mext = findM(self.n_elements,self.stateYT(),self.evals,self.Revec,self.tau,h,rtol,atol)
-        TSR_ext, weights_ext = findTSR(self.n_elements,rhs_ext,self.evals,self.Revec,h,Mext)
+        TSR_ext, _ = findTSR(self.n_elements,rhs_ext,self.evals,self.Revec,h,Mext)
         if getMext:
             return [TSR_ext, Mext]
         else:
@@ -362,12 +380,14 @@ class CanteraCSP(CanteraThermoKinetics):
 
     def calc_extended_TSRindices(self,**kwargs):
         """Computes number of Extended exhausted modes (Mext), the extended TSR and its indices. 
-        Caller must provide either a diffusion rhs with the keywork rhs_diffYT
-        or a convection rhs with the keywork rhs_convYT, or both.
+        Caller must provide either a diffusion rhs with the keyword diff
+        or a convection rhs with the keyword conv, or both (nv-long arrays).
         Other optional arguments are rtol and atol for the calculation of Mext.
         If not provided, uses default or previously set values.
-        The calculated value of Mext can be retrieved by passing
-        the optional argument getMext=True"""
+        The extended TSR can be retrieved by passing the optional argument
+        getTSRext=True, in which case the method returns (TSR_ext, indices).
+        Indices refer to the 2Nr reactions, then the nv convection and the
+        nv diffusion terms."""
         if self.is_changed(): 
             self.update_kernel()
             self._changed = False
@@ -392,9 +412,9 @@ class CanteraCSP(CanteraThermoKinetics):
                 raise ValueError("unknown argument --> %s" %key)
         
         if(len(rhs_convYT)!=nv):
-            raise ValueError("Check dimension of Convection rhs. Should be %d", nv)
+            raise ValueError("Check dimension of Convection rhs. Should be %d" % nv)
         if(len(rhs_diffYT)!=nv):
-            raise ValueError("Check dimension of Diffusion rhs. Should be %d", nv)
+            raise ValueError("Check dimension of Diffusion rhs. Should be %d" % nv)
             
         Smat = self.generalized_Stoich_matrix
         rvec = self.R_vector    
@@ -417,9 +437,8 @@ class CanteraCSP(CanteraThermoKinetics):
     def kernel(self):
         """Computes CSP kernel. Its dimension is Nspecies + 1.
         Returns [evals,Revec,Levec,amplitudes]. 
-        Input must be an instance of the CSPCantera class"""
+        """
     
-        #self.nv = self.n_species + 1     
         self._rhs = self.source.copy()
         self._jac = self.jacobian.copy()
         #eigensystem
@@ -436,8 +455,7 @@ class CanteraCSP(CanteraThermoKinetics):
     def kernel_kinetic_only(self):
         """Computes kinetic kernel. Its dimension is Nspecies.
         Returns [evals,Revec,Levec,amplitudes]. 
-        Input must be an instance of the CSPCantera class"""
-        #self.nv = self.n_species
+        """
         self._rhs = self.source.copy()[:self.nv]
         self._jac = self.jacKinetic().copy()       
         #eigensystem
@@ -451,10 +469,9 @@ class CanteraCSP(CanteraThermoKinetics):
     
     
     def kernel_constrained_jac(self):
-        """Computes constrained (to enthalpy) kernel. Its dimension is Nspecies .
+        """Computes constrained kernel (constant enthalpy for const_p, constant internal energy for const_v). Its dimension is Nspecies.
         Returns [evals,Revec,Levec,amplitudes]. 
-        Input must be an instance of the CSPCantera class"""
-        #self.nv = self.n_species
+        """
         self._rhs = self.source.copy()[:self.nv]
         kineticjac = self.jacKinetic()  
         thermaljac = self.jacThermal()   
@@ -469,59 +486,24 @@ class CanteraCSP(CanteraThermoKinetics):
         return[evals,Revec,Levec,f]
 
 
+    def _jac_contribution_for_TPI(self):
+        """Per-reaction Jacobian contributions used by the timescale participation
+        indices. They sum to the full or kinetic Jacobian only: the constrained
+        Jacobian also contains the thermal correction, which is not split by
+        reaction, so TPIs would not decompose its eigenvalues."""
+        if self.jacobiantype == 'constrained':
+            raise NotImplementedError("Timescale participation indices are not available "
+                                      "for jacobiantype='constrained'. Use 'full' or 'kinetic'.")
+        return self.jac_contribution()
+
     def clean_conserved(self,evals):
         """Zero-out conserved modes eigenvalues"""
-        #threshold = np.abs(evals[0] * np.finfo(float).eps) #smallest acceptable eigenvalue based on range precision
-        #nCons = max( self.n_elements , np.sum(np.abs(evals) < threshold) )  #conserved subspace is n_elements or out-of-range eigenvalues if larger
-        #i = self.nv - nCons
         i = self.nv-self.n_elements
         evals[i:] = 0.0
         
     
 """ ~~~~~~~~~~~~ EXHAUSTED MODES ~~~~~~~~~~~~~
 """
-def findM_original(n_elements,stateYT,evals,Revec,tau,f,rtol,atol):
-    nv = len(Revec)
-    #nEl = n_elements 
-    threshold = np.abs(evals[0] * np.finfo(float).eps) #smallest acceptable eigenvalue based on range precision
-    nEl = max( n_elements , np.sum(np.abs(evals) < threshold) )  #conserved subspace is n_elements or out-of-range eigenvalues if larger
-
-    #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
-    imPart = evals.imag!=0
-    nModes = nv - nEl    #removing conserved modes
-    ewt = setEwt(stateYT,rtol,atol)[:nv]    
-    delw = np.zeros(nv)
-    for j in range(nModes-1):          #loop over eligible modes (last excluded)
-        taujp1 = tau[j+1]              #timescale of next (slower) mode
-        Aj = Revec[j]                  #this mode right evec
-        fj = f[j]                      #this mode amplitued
-        lamj = evals[j].real           #this mode eigenvalue (real part)
-        
-        delwMi =  modeContribution(Aj,fj,taujp1,lamj)    #contribution of j-th mode to state variables    
-        delw += delwMi
-        #if np.any(np.abs(delw) > ewt):
-        if np.max(np.abs(delw) / ewt) > 1:
-            if j==0:
-                M = 0
-            else:
-                M = j-1 if (imPart[j] and imPart[j-1] and evals[j].real==evals[j-1].real) else j    #if j is the second of a pair, move back by 2                    
-            return M
-
-    #print("All modes are exhausted")
-    M = nModes - 1   #if criterion is never verified, all modes are exhausted. Leave 1 active mode.
-    return M
-
-
-def setEwt_original(y,rtol,atol):   
-    ewt = [rtol * absy + atol if absy >= 1.0e-6 else absy + atol for absy in np.absolute(y)]
-    return ewt
-
-
-def modeContribution_original(a,f,tau,lam):
-    #delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 else 0.0
-    delwMi = a*f*(np.exp(tau*lam) - 1)/lam if lam != 0.0 and np.isfinite(np.exp(tau*lam)) else 1e+20
-    return delwMi        
-
 """ ~~~~~~~~~~~~~~ findM optimized ~~~~~~~~~~~~~~~~
 """
 
@@ -578,7 +560,6 @@ def findM(n_elements, stateYT, evals, Revec, tau, f, rtol, atol):
 
 def setEwt(y, rtol, atol):
     absy = np.abs(y)
-    #ewt = np.where(absy >= 1.0e-6, rtol * absy + atol, absy + atol)
     ewt = rtol * absy + atol
     return ewt
 
@@ -608,10 +589,9 @@ def modeContribution(a, f, tau, lam):
 def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
     nv = len(Revec)
     nEl = n_elements 
-    #nconjpairs = sum(1 for x in self.eval.imag if x != 0)/2
     imPart = evals.imag!=0
     nModes = nv - nEl - 1   #removing conserved modes
-    ewt = setEwt(stateYT,rtol,atol)    
+    ewt = setEwt(stateYT,rtol,atol)[:nv]   #[:nv] required for kinetic/constrained jacobian (size Ns)
     delw = np.zeros(nv)
     
     for j in range(nModes,Tail,-1):    #backwards loop over eligible modes (conserved excluded)
@@ -627,10 +607,7 @@ def findH(n_elements,stateYT,evals,Revec,dt,f,rtol,atol,Tail):
                 H = j+2 if (imPart[j] and imPart[j+1] and evals[j].real==evals[j+1].real) else j+1    #if j is the second of a pair, move fwd by 2                    
             return H
 
-    #print("No modes are active")
-    #H = Tail   #if criterion is never verified, no modes are active.
     H = Tail + 1  #if criterion is never verified, leave one active mode
-    #print("-----------")
     return H
 
 
@@ -664,7 +641,6 @@ def detectFrozenModes(M, stateYT, Revec, Levec, Smat, rvec, rtol, atol):
         Indices of modes that are frozen.
     """
     nv = len(Revec)
-    nr = Smat.shape[1]
     
     # 1. Calculate ewt
     ewt = np.abs(setEwt(stateYT, rtol, atol))[:nv]
@@ -705,7 +681,9 @@ def detectFrozenModes(M, stateYT, Revec, Levec, Smat, rvec, rtol, atol):
     
 def findTSR(n_elements,rhs,evals,Revec,f,M):
     n = len(Revec)
-    nEl = n_elements 
+    # conserved subspace: n_elements or out-of-range eigenvalues if larger (as in findM)
+    threshold = np.abs(evals[0] * np.finfo(float).eps)
+    nEl = max(n_elements, np.sum(np.abs(evals) < threshold))
     #deal with amplitudes of cmplx conjugates
     fvec = f.copy()
     imPart = evals.imag!=0
@@ -715,7 +693,7 @@ def findTSR(n_elements,rhs,evals,Revec,f,M):
             fvec[i-1] = fvec[i]
     fnorm = fvec / np.linalg.norm(rhs)
     #deal with zero-eigenvalues (if any)
-    fvec[evals==0.0] = 0.0
+    fnorm[evals==0.0] = 0.0
     weights = fnorm**2
     weights[0:M] = 0.0 #excluding fast modes
     weights[n-nEl:n] = 0.0 #excluding conserved modes
@@ -726,7 +704,7 @@ def findTSR(n_elements,rhs,evals,Revec,f,M):
           
 
 def TSRindices(weights, evals):
-    """Ns array containing participation index of mode i to TSR"""
+    """Nv array containing participation index of mode i to TSR"""
     n = len(weights)
     Index = np.zeros((n))
     norm = np.sum([weights[i] * np.abs(evals[i]) for i in range(n)])
@@ -752,7 +730,6 @@ def eigsys(jac):
     Both Revec (since it is transposed) and Levec (naturally) contain row vectors,
     such that an eigenvector can be retrieved using R/Levec[index,:] """
     
-    #ncons = len(jac) - np.linalg.matrix_rank(jac)
     evals, Revec = np.linalg.eig(jac)
     
     #sort 
@@ -760,8 +737,6 @@ def eigsys(jac):
     evals = evals[idx]
     Revec = Revec[:,idx]
     
-    #zero-out conserved eigenvalues (last ncons)
-    #evals[-ncons:] = 0.0
 
     #adjust complex conjugates
     cmplx = Revec.imag.any(axis=0)   #boolean indexing of complex eigenvectors (cols)
@@ -777,7 +752,7 @@ def eigsys(jac):
     #compute left eigenvectors, amplitudes
     try:
         Levec = np.linalg.inv(Revec)
-    except:
+    except np.linalg.LinAlgError:
         print('Warning: looks like the R martrix is singular (rank[R] = %i).' %np.linalg.matrix_rank(Revec))
         print('         Kernel is zeroed-out.')
         return[np.zeros(len(jac)),np.zeros((len(jac),len(jac))),np.zeros((len(jac),len(jac)))]
@@ -810,44 +785,56 @@ def timescales(evals):
 """ ~~~~~~~~~~~~ INDEXES FUNC ~~~~~~~~~~~~~
 """
 
-def CSPIndices(Proj, Smat, rvec, normtype):
-    """Returns a Nv x 2Nr matrix of indexes, computed as Proj S r """
-    ns = Smat.shape[0]
+def _row_cut(norm_cut, i):
+    """norm_cut may be None, a scalar (same cut for every row) or a per-row array."""
+    if norm_cut is None or np.isscalar(norm_cut):
+        return norm_cut
+    return norm_cut[i]
+
+def _normalize_index(Index, normtype, norm_cut=None):
+    """Normalizes Index by the sum of its absolute values (normtype='abs').
+    If norm_cut is given and that sum is smaller than norm_cut, the index is
+    set to zero: the process contributions are negligible and their relative
+    weights are not meaningful."""
+    if normtype != 'abs':
+        return Index
+    norm = np.sum(np.abs(Index))
+    if norm == 0.0 or (norm_cut is not None and norm < norm_cut):
+        return np.zeros_like(Index)
+    return Index/norm
+
+def CSPIndices(Proj, Smat, rvec, normtype, norm_cut=None):
+    """Returns a Nv x 2Nr matrix of indexes, computed as Proj S r.
+    Optional norm_cut (scalar or Nv-long array): rows whose sum of absolute
+    contributions is below the cut are set to zero (only with normtype='abs')."""
+    nv = Smat.shape[0]
     nr = Smat.shape[1]
-    Index = np.zeros((ns,nr))
-    for i in range(ns):
-        Proj_i = Proj[i,:]
-        Index[i,:] = CSPIndices_one_var(Proj_i, Smat, rvec, normtype)
-    #np.sum(abs(Index),axis=1) check: a n-long array of ones
+    if norm_cut is not None and not np.isscalar(norm_cut) and len(norm_cut) != nv:
+        raise ValueError("norm_cut must be a scalar or a %d-long array" % nv)
+    Index = np.zeros((nv,nr))
+    for i in range(nv):
+        Index[i,:] = CSPIndices_one_var(Proj[i,:], Smat, rvec, normtype, _row_cut(norm_cut, i))
     return Index
 
-def CSPIndices_one_var(Proj_i, Smat, rvec, normtype):
+def CSPIndices_one_var(Proj_i, Smat, rvec, normtype, norm_cut=None):
     """Given the i-th row of the projector, computes 2Nr indexes of reactions to variable i.
     Proj_i must be a nv-long array. Returns a 2Nr-long array"""
-    nr = Smat.shape[1]
     PS = np.matmul(Proj_i,Smat) 
     Index = np.multiply(PS,rvec)
-    if normtype == 'abs':
-        norm = np.sum(abs(Index))
-        if norm != 0.0:
-            Index = Index/norm
-        else:
-            Index = np.zeros((nr))
-        #np.sum(abs(Index),axis=1) check: a n-long array of ones
-    return Index
+    return _normalize_index(Index, normtype, norm_cut)
 
 
-def CSP_amplitude_participation_indices(B, Smat, rvec, normtype):
-    """Ns x 2Nr array containing participation index of reaction k to variable i"""
-    API = CSPIndices(B, Smat, rvec, normtype)
+def CSP_amplitude_participation_indices(B, Smat, rvec, normtype, norm_cut=None):
+    """Nv x 2Nr array containing participation index of reaction k to mode i"""
+    API = CSPIndices(B, Smat, rvec, normtype, norm_cut)
     return API
 
-def CSP_importance_indices(A, B, M, Smat, rvec, normtype):
-    """Ns x 2Nr array containing fast/slow importance index of reaction k to variable i"""
+def CSP_importance_indices(A, B, M, Smat, rvec, normtype, norm_cut=None):
+    """Nv x 2Nr arrays containing fast/slow importance index of reaction k to variable i"""
     fastProj = np.matmul(np.transpose(A[0:M]),B[0:M])
-    Ifast = CSPIndices(fastProj, Smat, rvec, normtype)
+    Ifast = CSPIndices(fastProj, Smat, rvec, normtype, norm_cut)
     slowProj = np.matmul(np.transpose(A[M:]),B[M:])
-    Islow = CSPIndices(slowProj, Smat, rvec, normtype)      
+    Islow = CSPIndices(slowProj, Smat, rvec, normtype, norm_cut)      
     return [Ifast,Islow]
                 
 def CSP_pointers(A,B):
@@ -895,82 +882,35 @@ def classify_species(stateYT, rhs, pointers, M, trace):
     return species_type
 
         
-def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype):
+def CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype, norm_cut=None):
+    """2Nr-long array of contributions of each reaction to the i-th eigenvalue
+    (its real part for a complex-conjugate pair): lambda_i = sum_k b^i J_k a_i."""
     imPart = evals.imag!=0
     if(imPart[i] and imPart[i-1] and evals[i].real==evals[i-1].real): i = i-1  #if the second of a complex pair, shift back the index by 1
     Index = np.zeros(2*nr)
-    norm = 0.0
     if(imPart[i]):
         for k in range(2*nr):
-            Index[k] = 0.5 * ( np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i]) -
+            # complex pair stored as real basis [Re v, Im v]: both diagonal terms
+            # b^i J a_i and b^(i+1) J a_(i+1) equal Re(lambda), so their mean
+            # decomposes Re(lambda) over the reactions.
+            Index[k] = 0.5 * ( np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i]) +
                 np.matmul(np.matmul(B[i+1],JacK[k]),np.transpose(A)[:,i+1]))
-            norm = norm + abs(Index[k])
     else:
         for k in range(2*nr):
             Index[k] = np.matmul(np.matmul(B[i],JacK[k]),np.transpose(A)[:,i])
-            norm = norm + abs(Index[k])
-    for k in range(2*nr):
-            if normtype != 'none': 
-                Index[k] = Index[k]/norm if (norm != 0.0) else 0.0 
-    return Index
+    return _normalize_index(Index, normtype, norm_cut)
     
-def CSP_timescale_participation_indices(nr, JacK, evals, A, B, normtype):
-    """Ns x 2Nr array containing TPI of reaction k to variable i"""
+def CSP_timescale_participation_indices(nr, JacK, evals, A, B, normtype, norm_cut=None):
+    """Nv x 2Nr array containing TPI of reaction k to mode i"""
     nv = A.shape[0]
+    if norm_cut is not None and not np.isscalar(norm_cut) and len(norm_cut) != nv:
+        raise ValueError("norm_cut must be a scalar or a %d-long array" % nv)
     TPI = np.zeros((nv,2*nr))
     for i in range(nv):
-        TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype)
+        TPI[i] = CSP_participation_to_one_timescale(i, nr, JacK, evals, A, B, normtype, _row_cut(norm_cut, i))
     return TPI    
 
 
-def CSPtiming(gas):
-    import time
-    ns = gas.n_species
-    randY =  np.random.dirichlet(np.ones(ns),size=1)
-    gas.TP = 1000,101325.0
-    gas.Y = randY
-    gas.constP = 101325.0
-    gas.jacobiantype='full'
-    gas.rtol=1.0e-3
-    gas.atol=1.0e-10
-    starttime = time.time()
-    gas.update_kernel()
-    endtime = time.time()
-    timekernel = endtime - starttime
-    starttime = time.time()
-    M = gas.calc_exhausted_modes()
-    endtime = time.time()
-    timeM = endtime - starttime
-    starttime = time.time()
-    TSR = gas.calc_TSR()
-    endtime = time.time()
-    timeTSR = endtime - starttime
-    starttime = time.time()
-    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=True,Impo=False,species_type=False,TPI=False)
-    endtime = time.time()
-    timeAPI = endtime - starttime
-    starttime = time.time()
-    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=True,species_type=False,TPI=False)
-    endtime = time.time()
-    timeImpo = endtime - starttime
-    starttime = time.time()
-    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=False,species_type=True,TPI=False)
-    endtime = time.time()
-    timeclassify = endtime - starttime
-    starttime = time.time()
-    api, tpi, ifast, islow, species_type = gas.calc_CSPindices(API=False,Impo=False,species_type=False,TPI=True)
-    endtime = time.time()
-    timeTPI = endtime - starttime
-    print ('Time Kernel:      %10.3e' %timekernel)
-    print ('Time findM:       %10.3e' %timeM)
-    print ('Time TSR:         %10.3e' %timeTSR)
-    print ('Time API indexes: %10.3e' %timeAPI)
-    print ('Time Imp indexes: %10.3e' %timeImpo)
-    print ('Time TPI indexes: %10.3e' %timeTPI)
-    print ('Time class specs: %10.3e' %timeclassify)
-    print ('*** all times in seconds')
-
-    
 """  ~~~~~~~~~~~ EXTENDED FUNC ~~~~~~~~~~~~
 """
 
@@ -988,10 +928,6 @@ def add_transport(rhs,Levec,Smat,rvec,rhs_convYT,rhs_diffYT):
     rvec_ext[nr:nr+nv] = rhs_convYT
     rvec_ext[nr+nv:nr+2*nv] = rhs_diffYT
     
-    #splitrhs_ext = np.dot(Smat_ext,rvec_ext)
-    #checksplitrhs = np.isclose(rhs_ext, splitrhs_ext, rtol=1e-6, atol=0, equal_nan=False)
-    #if(np.any(checksplitrhs == False)):
-    #    raise ValueError('Mismatch between numerical extended RHS and S.r')
         
     return rhs_ext, h, Smat_ext, rvec_ext 
 

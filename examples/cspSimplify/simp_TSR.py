@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import PyCSP.Functions as csp
 import PyCSP.Simplify as simp
 import PyCSP.utils as utils
-#from PyCSP.soln2cti import write
 
 parent_mech = 'gri30.yaml' 
 

@@ -1,0 +1,59 @@
+/* PyCSP documentation style: colours from the PyCSP logo, code blocks from the
+   LaTeX "mystyle" listings of the original PDF manual. */
+:root {
+  --pycsp-blue: #356FA0;
+  --pycsp-blue-light: #4A9DE0;
+  --pycsp-yellow: #F5C84C;
+  --pycsp-code-bg: #F2F2EB;        /* rgb(0.95,0.95,0.92) */
+  --pycsp-code-comment: #009900;   /* codegreen */
+  --pycsp-code-keyword: #FF00FF;   /* magenta */
+  --pycsp-code-string: #9400D1;    /* codepurple */
+  --pycsp-code-lineno: #808080;    /* codegray */
+}
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: var(--pycsp-blue);
+  --md-primary-fg-color--light: var(--pycsp-blue-light);
+  --md-primary-fg-color--dark: #284f73;
+  --md-primary-bg-color: #ffffff;
+}
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #c99a1c;
+  --md-accent-fg-color--transparent: rgba(245, 200, 76, 0.15);
+}
+
+/* header: logo is wide, give it room */
+.md-header__button.md-logo img { height: 1.6rem; width: auto; }
+
+/* headings in the manual's bold serif style */
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { font-weight: 700; color: inherit; }
+.md-typeset h2 { border-bottom: 1px solid var(--md-default-fg-color--lightest); padding-bottom: .2em; }
+
+/* code blocks: listings "mystyle" palette (light scheme) */
+[data-md-color-scheme="default"] {
+  --md-code-bg-color: var(--pycsp-code-bg);
+  --md-code-hl-comment-color: var(--pycsp-code-comment);
+  --md-code-hl-keyword-color: var(--pycsp-code-keyword);
+  --md-code-hl-string-color: var(--pycsp-code-string);
+}
+.md-typeset .highlighttable .linenos, .md-typeset .highlight .linenos { color: var(--pycsp-code-lineno); }
+.md-typeset .linenodiv pre, .md-typeset [data-linenos]::before { color: var(--pycsp-code-lineno); font-size: .85em; }
+
+/* API entries, in the manual's "- name / Type (...) / description" layout */
+.md-typeset dl dt { font-family: var(--md-code-font-family); font-weight: 600; margin-top: 1em; }
+.md-typeset dl dt code { font-size: .9em; }
+.md-typeset dl dd { margin-left: 1.6em; }
+.md-typeset dl dd > p:first-child em.type,
+.md-typeset .type { font-style: italic; color: var(--md-default-fg-color--light); }
+
+/* title block on the home page */
+.pycsp-title { text-align: center; margin: 1.5em 0 2em 0; }
+.pycsp-title img { width: 45%; min-width: 220px; }
+.pycsp-title hr { margin: .6em auto; width: 60%; }
+.pycsp-title .subtitle { font-size: 1.15em; }
+
+/* figures */
+.md-typeset figure img { border: 1px solid var(--md-default-fg-color--lightest); background: #fff; }
+.md-typeset figure figcaption { font-size: .85em; }
+.pycsp-row { display: flex; flex-wrap: wrap; gap: 1em; justify-content: center; align-items: flex-start; }
+.pycsp-row figure { flex: 1 1 280px; margin: 0; }

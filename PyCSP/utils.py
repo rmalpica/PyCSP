@@ -8,11 +8,20 @@ Created on Wed Dec 23 17:51:37 2020
 
 import cantera as ct
 import numpy as np
-import PyCSP.Functions as csp
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import itertools
 import os
+
+
+def shared_reactor(reactor_class, gas):
+    """Creates a Cantera reactor that shares (does not clone) the `gas` object,
+    so that `gas` follows the integrated state and CSP quantities can be
+    queried directly on it. Cantera > 3.2 clones the phase by default."""
+    try:
+        return reactor_class(gas, clone=False)
+    except TypeError:   # Cantera < 3.2: no clone argument, phase always shared
+        return reactor_class(gas)
 
 
 def select_eval(evals,indexes):
@@ -39,7 +48,7 @@ def reorder_evals(ev,times):
 
     Parameters
     ----------
-    evals : 2D numpy array containing a series of eigenvalues.
+    ev : 2D numpy array containing a series of eigenvalues.
     times : 1D numpy array containing the corresponding times
    
     Returns
@@ -51,11 +60,10 @@ def reorder_evals(ev,times):
 
     evals = ev.real.copy()
     evalsd = ev.real.copy()
-    img = ev.imag.copy()
     nstep = evals.shape[0]
     nv = evals.shape[1]
     delta = np.zeros(nv)
-    mask = np.zeros((nstep,nv), dtype=np.int8)
+    mask = np.zeros((nstep,nv), dtype=int)
     mask[0] = np.arange(nv)
     mask[1] = np.arange(nv)
 
@@ -108,7 +116,7 @@ def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, 
     
     
     #integrate ODE
-    r = ct.IdealGasConstPressureReactor(gas)
+    r = shared_reactor(ct.IdealGasConstPressureReactor, gas)
     sim = ct.ReactorNet([r])
     sim.rtol = rtol
     sim.atol = atol
@@ -117,7 +125,7 @@ def integrate_batch_constP(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, 
     sim.initial_time = 0.0
     while sim.time < tend:
         sim.step()
-        states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
+        states.append(gas.state, t=sim.time, rhsT=gas.source[-1])
     return states
 
 
@@ -143,13 +151,12 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, 
     T = temperature
     P = pressure
     gas.TP = T, P
-    rho = gas.density
-    gas.constRho = rho
-    gas.set_equivalence_ratio(eqratio,FuComp,OxComp)
+    gas.set_equivalence_ratio(eqratio,FuComp,OxComp)   #holds T and P
+    gas.constRho = gas.density   #density of the actual mixture
     
     
     #integrate ODE
-    r = ct.IdealGasReactor(gas)
+    r = shared_reactor(ct.IdealGasReactor, gas)
     sim = ct.ReactorNet([r])
     sim.rtol = rtol
     sim.atol = atol
@@ -158,7 +165,7 @@ def integrate_batch_constV(gas,temperature,pressure,eqratio,FuComp,OxComp,tend, 
     sim.initial_time = 0.0
     while sim.time < tend:
         sim.step()
-        states.append(r.thermo.state, t=sim.time, rhsT=gas.source[-1])
+        states.append(gas.state, t=sim.time, rhsT=gas.source[-1])
     return states
 
 def find_duplicate_reactions(R):
@@ -168,8 +175,6 @@ def find_duplicate_reactions(R):
     ----------
     R : an instance of a Reaction object, e.g.:
     R = ct.Reaction.list_from_file("gri30.yaml", gas)
-    R = ct.Reaction.listFromCti(open("path/to/gri30.cti").read())
-    R = ct.Reaction.listFromXml(open("path/to/gri30.xml").read())
 
     Returns
     -------
@@ -274,9 +279,9 @@ def plot_index_over_time(time, data, temp, threshold, names, output_path, ylabel
                 raise ValueError(
                     f"frozen has wrong length {mask.shape[0]}, expected {len(time)}"
                 )
-            y[mask] = np.nan  # break line where frozen is False
+            y[mask] = np.nan  # hide (break line) where the mode is frozen
 
-        ax2.plot(time[gridIdx], y[gridIdx], color=color, linestyle=linestyle, marker=marker, markersize=2, label=label_name,markevery=int(0.02*len(time)))
+        ax2.plot(time[gridIdx], y[gridIdx], color=color, linestyle=linestyle, marker=marker, markersize=2, label=label_name,markevery=max(1,int(0.02*len(time))))
     
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel)
@@ -525,7 +530,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         
         # Temperature (last column of state)
         temp = db.state[:, -1]
-        ax1.plot(db.time, temp, 'r-', label='Temperature',marker='o',markersize=2,markevery=int(0.02*len(db.time)))
+        ax1.plot(db.time, temp, 'r-', label='Temperature',marker='o',markersize=2,markevery=max(1,int(0.02*len(db.time))))
         ax1.set_xlabel(xlabel)
         ax1.set_ylabel('Temperature [K]', color='r')
         ax1.tick_params(axis='y', labelcolor='r')
@@ -639,7 +644,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         fig, ax1 = plt.subplots(figsize=(10, 6))
         
 
-        pcm = ax1.pcolormesh(
+        ax1.pcolormesh(
             time_edges,
             y_edges,
             layered_map,
@@ -667,7 +672,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # --------------------------------------------------
         # 9) labels & title
         # --------------------------------------------------
-        ax1.set_xlabel("x [m]")
+        ax1.set_xlabel(xlabel)
         ax1.set_ylabel("Mode number")
         ax1.set_title("Modes map (slow / exhausted / frozen)")
 
@@ -701,14 +706,14 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         plt.savefig(os.path.join(output_folder, 'modes_map.png'), dpi=300, bbox_inches='tight')
         plt.close(fig)
 
-    # 13. Rate of progress
-    if hasattr(db, 'rates'):
+    # 13. Rate of progress (tag 'rates': 2Nr rates of progress per time, e.g. gas.R_vector)
+    if hasattr(db, 'rates') and hasattr(db, 'state'):
         print("Plotting Rate of progress...")
         fig, ax1 = plt.subplots(figsize=(8,5))
         
         # Temperature (last column of state)
         temp = db.state[:, -1]
-        ax1.plot(db.time, temp, 'grey', label='Temperature',marker='o',markersize=2,markevery=int(0.02*len(db.time)))
+        ax1.plot(db.time, temp, 'grey', label='Temperature',marker='o',markersize=2,markevery=max(1,int(0.02*len(db.time))))
         ax1.set_xlabel(xlabel)
         ax1.set_ylabel('Temperature [K]', color='grey')
         ax1.tick_params(axis='y', labelcolor='grey')
@@ -718,16 +723,18 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         ax2 = ax1.twinx()
         
         # Rate of progress
-        rate_data = db.RATE[:,:]
+        rate_data = db.rates[:,:]
+        max_rates = np.max(np.abs(rate_data), axis=0)
+        major_reactions = np.where(max_rates > threshold * np.max(max_rates))[0]
         
         l_styles = ['-','--','-.',':']
         m_styles = ['','.','o','^','*']
         colormap = mpl.cm.tab10.colors
         style_cycle = itertools.cycle(itertools.product(m_styles, l_styles, colormap))
         
-        for idx in major_indices:
+        for idx in major_reactions:
             marker, linestyle, color = next(style_cycle)
-            label_name = gas.reaction_names()[idx]
+            label_name = reaction_names[idx]
             ax2.plot(db.time, rate_data[:, idx], color=color, linestyle=linestyle, marker=marker, label=label_name)
             
         ax2.set_ylabel('Rate of progress [kmol/m3/s]', color='k')
@@ -744,27 +751,32 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         plt.savefig(os.path.join(output_folder, 'rate_of_progress.png'), dpi=800, bbox_inches='tight')
         plt.close(fig)
 
-    # 14. RHS
+    # 14. RHS (tag 'rhs': Nv-long rhs per time; optional tag 'splitrhs': S.r for comparison)
     if hasattr(db, 'rhs'):
         print("Plotting RHS...")
         fig, ax = plt.subplots(figsize=(8,5))
                 
-        # Rate of progress
-        rhs_data = db.RHS[:,:]
-        splitRHS_data = db.SplitRHS[:,:]
+        rhs_data = db.rhs[:,:]
+        splitRHS_data = db.splitrhs[:,:] if hasattr(db, 'splitrhs') else None
+        if hasattr(db, 'state'):
+            rhs_species = np.where(np.max(db.state[:, :-1], axis=0) > species_threshold)[0]
+        else:
+            rhs_species = np.arange(rhs_data.shape[1]-1)
 
         l_styles = ['-','--','-.',':']
         m_styles = ['','.','o','^','*']
         colormap = mpl.cm.tab10.colors
         style_cycle = itertools.cycle(itertools.product(m_styles, l_styles, colormap))
 
-        for idx in major_indices:
+        for idx in rhs_species:
             marker, linestyle, color = next(style_cycle)
             label_name = gas.species_names[idx]
             ax.plot(db.time, rhs_data[:, idx], color=color, linestyle=linestyle, marker=marker, label=label_name)
-            ax.plot(db.time, splitRHS_data[:, idx], color='black', linestyle='--')
-        ax.plot(db.time, rhs_data[:, -1], color='gold', linestyle=linestyle, marker=marker, label='T')
-        ax.plot(db.time, splitRHS_data[:, -1], color='black', linestyle='--')
+            if splitRHS_data is not None:
+                ax.plot(db.time, splitRHS_data[:, idx], color='black', linestyle='--')
+        ax.plot(db.time, rhs_data[:, -1], color='gold', linestyle='-', label='T')
+        if splitRHS_data is not None:
+            ax.plot(db.time, splitRHS_data[:, -1], color='black', linestyle='--')
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel('RHS', color='k')
@@ -833,7 +845,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
                                ])
 
         norm = BoundaryNorm(
-            boundaries=[0, 1.0],
+            boundaries=[-0.5, 0.5, 1.5],
             ncolors=cmap.N,
         )
 
@@ -842,7 +854,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # --------------------------------------------------
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        pcm = ax.pcolormesh(
+        ax.pcolormesh(
             time_edges,
             y_edges,
             layered_map,
@@ -869,7 +881,7 @@ def save_CSP_plots(db, gas, output_folder='CSP_Plots', threshold=0.05, xlim=None
         # --------------------------------------------------
         # 9) labels & title
         # --------------------------------------------------
-        ax.set_xlabel("x [m]")
+        ax.set_xlabel(xlabel)
         ax.set_ylabel("Species name")
         ax.set_title("Species map (fast / slow)")
 

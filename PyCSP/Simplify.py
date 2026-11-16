@@ -27,6 +27,7 @@ class CSPsimplify:
         self.TSRAPI = []
         self.speciestype = []
         self.verbose = False
+        self.norm_cut = None
  
     @property 
     def targetset(self):
@@ -85,6 +86,20 @@ class CSPsimplify:
         else:
             raise ValueError("Invalid problem type --> %s" %value)
 
+    @property
+    def norm_cut(self):
+        """Optional scalar cut on the sum of absolute contributions below which CSP
+        importance / TSR indices are set to zero (see CanteraCSP.calc_CSPindices)."""
+        return self._norm_cut
+
+    @norm_cut.setter
+    def norm_cut(self,value):
+        # a scalar only: the same cut is applied to importance indices (rows are
+        # variables) and to TSR amplitude participation indices (rows are modes)
+        if value is not None and not np.isscalar(value):
+            raise ValueError("CSPsimplify.norm_cut must be a scalar or None")
+        self._norm_cut = value
+
     @property 
     def verbose(self):
         return self._verbose
@@ -102,10 +117,10 @@ class CSPsimplify:
         self._gas.Y = randY
         self._gas.constP = 101325.0
         start = time.time()
-        api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False)
+        api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False,norm_cut=self.norm_cut)
         end = time.time()
-        time = end-start
-        totaltime = time*lenData
+        time_elapsed = end-start
+        totaltime = time_elapsed*lenData
         print('Number of species:                %i' % self.ns)
         print('Number of reactions:              %i' % self.nr)
         print('Dataset length:                   %i' % lenData)
@@ -129,12 +144,12 @@ class CSPsimplify:
             else:
                 rho = self._gas.density
                 self._gas.constRho = rho
-            api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False)
+            api, tpi, ifast, islow, species_type = self._gas.calc_CSPindices(API=False,Impo=True,species_type=True,TPI=False,norm_cut=self.norm_cut)
             self.ImpoFast[idx] = np.abs(ifast)
             self.ImpoSlow[idx] = np.abs(islow)
             self.speciestype[idx] = species_type
             if(self.TSRtargetset): 
-                self.TSRAPI[idx] = np.abs(self._gas.calc_TSRindices(type='amplitude'))
+                self.TSRAPI[idx] = np.abs(self._gas.calc_TSRindices(type='amplitude',norm_cut=self.norm_cut))
 
         
     def simplify_mechanism(self, threshold):
@@ -155,14 +170,11 @@ class CSPsimplify:
                 tsrtarget = self.get_tsrtarget(self.TSRAPI[idx],self.TSRtol)
                 if(self.verbose): print( "TSR-target set = "+str(tsrtarget) )
                 active_species.update(tsrtarget)
-            #print(active_species)
             trace,fast,slow = self.get_species_sets(self.speciestype[idx])
-            iter = 0            
             while True:
                 
                 previous_active = active_species.copy()
                 #update species relevant to active species
-                #print('iteration %i' % iter)
                 active_reactions = np.zeros(2*self.nr)
                 for i,specname in zip(range(self.ns),self._gas.species_names):               
                     newreactions = np.zeros(2*self.nr)
@@ -184,7 +196,6 @@ class CSPsimplify:
                 
                 if(self.verbose): print( "active species = "+str(active_species) )
                                 
-                iter = iter + 1
                 if active_species == previous_active:
                     break
                     
@@ -193,8 +204,7 @@ class CSPsimplify:
             all_active_reacs[idx] = active_reactions  #list containing active reactions in each datapoint
             
       
-        #union of active reactions
-        reactions = self.unite_active_reactions(all_active_reacs)
+        #union of active species (reactions are recovered below from the species set)
         species = set().union(*all_active_species)
         
         
@@ -212,11 +222,8 @@ class CSPsimplify:
         sorted_api = [x[1] for x in tpls]
         if(sum(sorted_api)==0.0):             
             return set()
-        n = 1
-        for i in range(len(sorted_api)):
-            while sum(sorted_api[:i+1]) <= thr:
-                n = n + 1
-                break
+        #number of reactions needed to exceed thr cumulative TSR-API (at least one, at most all)
+        n = min(len(sorted_api), 1 + int(np.sum(np.cumsum(sorted_api) <= thr)))
         tsrset = set()
         for i in range(n):
             k = tpls[i][0]

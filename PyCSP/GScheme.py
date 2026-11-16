@@ -5,7 +5,6 @@ Created on Mon Sep  11 15:41:22 2023
 Last update on Wed Nov 20 2024
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
 """
-import sys
 import numpy as np
 import pandas as pd
 import PyCSP.Functions as cspF
@@ -14,7 +13,6 @@ from PyCSP.profiling_tools import profile_cpu_time_and_count
 
 class GScheme:
     def __init__(self, gas):   
-        self._initializing = True
         self._gas = gas
         self._y = []
         self._t = []
@@ -56,7 +54,6 @@ class GScheme:
         self.RK4_time = 0.0
         self.RK4_n = 0
 
-        self._initializing = False
 
 
     
@@ -261,7 +258,6 @@ class GScheme:
     
     def rhs(self,y):
         self._gas.set_stateYT(y)
-        dydt = np.zeros(self._gas.nv) 
         dydt = self._gas.source
         return dydt
         
@@ -280,7 +276,7 @@ class GScheme:
             elif(key == 'jacobiantype'):
                 self.jacobiantype = value
             else:
-                sys.exit('Unknown keyword in set_integrator')
+                raise ValueError('Unknown keyword in set_integrator --> %s' % key)
                     
     def set_initial_value(self,y0,t0):
         self._y = y0
@@ -308,7 +304,6 @@ class GScheme:
         self._H = self.CSPslowModes(ysol,self.lam,self.A,self.B,self.dt,self.csprtolH,self.cspatolH,self.T) 
         
         #advance in time active dynamics to ya
-        #print('integrating %d - %d = %d modes\n' %(self.H,self.T,len(ysol[self.T:self.H])))
         ya = self.RK4gsc(self.A,self.B)
         
         #calc Hc in ystar               
@@ -360,26 +355,25 @@ class GScheme:
         diagOld = self.diagJac.copy()
         self.diagJac = self._gas.jacobian_diagonal
         normJac = 0.0
-        if (self.iter > 3):
+        if (self.iter >= 3):   #consistent with the reuse guard in CSPcore (iter < 3 forces a basis update)
             dum = [(self.diagJac[i]-diagOld[i])/self.diagJac[i] if(np.abs(self.diagJac[i]) > 1e-20) else 0.0 for i in range(len(diagOld)-1)]
             normJac = np.linalg.norm(dum)
-        #print('norm = %10.3e' % normJac)
         return normJac
 
     def profiling(self):
         data = {
             "Function": ["G-Scheme Total", "Basis calculation", "M calculation", "H calculation", "RK4 solve"],
             "Total Time (s)": [self.integrate_time, self.CSPbasis_time, self.calcM_time, self.calcH_time, self.RK4_time],
-            "Time %": [self.integrate_time*100/self.integrate_time, self.CSPbasis_time*100/self.integrate_time, self.calcM_time*100/self.integrate_time, self.calcH_time*100/self.integrate_time, self.RK4_time*100/self.integrate_time],
+            "Time %": [_safe_div(self.integrate_time*100, self.integrate_time), _safe_div(self.CSPbasis_time*100, self.integrate_time), _safe_div(self.calcM_time*100, self.integrate_time), _safe_div(self.calcH_time*100, self.integrate_time), _safe_div(self.RK4_time*100, self.integrate_time)],
             "Calls": [self.integrate_n,self.CSPbasis_n,self.calcM_n,self.calcH_n,self.RK4_n],
-            "Time per Call (s)": [self.integrate_time/self.integrate_n, self.CSPbasis_time/self.CSPbasis_n if self.CSPbasis_n != 0 else 0, self.calcM_time/self.calcM_n, self.calcH_time/self.calcH_n, self.RK4_time/self.RK4_n],
+            "Time per Call (s)": [_safe_div(self.integrate_time, self.integrate_n), _safe_div(self.CSPbasis_time, self.CSPbasis_n), _safe_div(self.calcM_time, self.calcM_n), _safe_div(self.calcH_time, self.calcH_n), _safe_div(self.RK4_time, self.RK4_n)],
         }
         
         # Create the DataFrame
         df = pd.DataFrame(data)
         
         extra_rows = [
-            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time), "Time %": (self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time))*100/self.integrate_time, "Calls": self.integrate_n, "Time per Call (s)": (self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time))/self.integrate_n},
+            {"Function": "Other", "Total Time (s)": self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time), "Time %": _safe_div((self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time))*100, self.integrate_time), "Calls": self.integrate_n, "Time per Call (s)": _safe_div(self.integrate_time - (self.CSPbasis_time + self.calcM_time + self.calcH_time + self.RK4_time), self.integrate_n)},
         ] 
         df = pd.concat([df, pd.DataFrame(extra_rows)], ignore_index=True)
         
@@ -414,3 +408,7 @@ def smart_timescale(tau,factor,T,lamT,dtold):
     #if(lamT.real > 0):
     dt = min(dt,1.5*dtold)
     return dt
+
+
+def _safe_div(a, b):
+    return a/b if b != 0 else 0.0

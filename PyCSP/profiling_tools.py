@@ -18,8 +18,6 @@ def profile_cpu_time(attribute_name, log=False):
         return wrapper
     return decorator
 
-import time
-from functools import wraps
 
 def profile_cpu_time_and_count(time_attribute, count_attribute, log=False):
     """

@@ -146,7 +146,7 @@ class CanteraThermoKinetics(ct.Solution):
     """
     def rhs_const_p(self):
         """Computes chemical RHS [shape:(ns+1)] for a constant pressure reactor. 
-        Input must be an instance of the CSPCantera class"""
+        """
         
         ns = self.n_species    
         ydot = np.zeros(ns+1)
@@ -163,7 +163,7 @@ class CanteraThermoKinetics(ct.Solution):
     
     def rhs_const_v(self):
         """Computes chemical RHS [shape:(ns+1)] for a constant volume reactor. 
-        Input must be an instance of the CSPCantera class"""
+        """
         
         ns = self.n_species    
         ydot = np.zeros(ns+1)
@@ -209,7 +209,6 @@ class CanteraThermoKinetics(ct.Solution):
         R = ct.gas_constant
         cp = self.cp_mass
         cv = self.cv_mass
-        #wmix = 1.0/(np.dot(self.Y, np.reciprocal(Wk)))
         wmix = self.mean_molecular_weight
         gamma = cp / cv
         
@@ -236,224 +235,147 @@ class CanteraThermoKinetics(ct.Solution):
         return rvec
     
     """ ~~~~~~~~~~~~ jacobian ~~~~~~~~~~~~~
+    All Jacobians are forward finite differences in the variables (Y_1..Y_Ns, T).
+    Derivatives are taken holding the thermodynamic constraint of the problem
+    fixed: pressure for const_p, density for const_v. Mass fractions are
+    perturbed without renormalisation.
     """
 
-    def jacobian_const_p(self):
-        """Computes numerical Jacobian.
-        Returns a N_s+1 x N_s+1 array [jac]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
-        #setup the state vector
+    @staticmethod
+    def _fd_steps(y, T):
+        sro = np.sqrt(np.finfo(float).eps)
+        dy = np.maximum(sro*np.abs(y), 1e-8)
+        dT = max(sro*abs(T), 1e-3)
+        return dy, dT
+
+    def _set_constrained_state(self, y, T, P, rho, problemtype):
+        """Sets (unnormalised) mass fractions y and temperature T, holding
+        P (const_p) or rho (const_v). Note that set_unnormalized_mass_fractions
+        alone holds the density, hence P must be reset explicitly."""
+        self.set_unnormalized_mass_fractions(y)
+        if problemtype == 'const_p':
+            self.TP = T, P
+        else:
+            self.TD = T, rho
+
+    def _numerical_jacobian(self, problemtype):
+        rhs = self.rhs_const_p if problemtype == 'const_p' else self.rhs_const_v
         T = self.T
-        p = self.P
-        y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_p()   #ns+1-long (Y1,...,Yn,T)
-        
-        #create a jacobian vector
-        jac2D = np.zeros((self.n_species+1, self.n_species+1))
-        
-        #evaluate the Jacobian
-        for i in range(self.n_species):
-            dy = np.zeros(self.n_species)
-            dy[i] = max(sro*abs(y[i]),1e-8)
-            self.set_unnormalized_mass_fractions(y+dy)
-            ydotp = self.rhs_const_p()
-            dydot = ydotp-ydot
-            jac2D[:,i] = dydot/dy[i]
-        
-        self.Y = y
-
-        dT = max(sro*abs(T),1e-3)
-        self.TP = T+dT,self.P
-        ydotp = self.rhs_const_p()
-        dydot = ydotp-ydot
-        jac2D[:,-1] = dydot/dT
-        
-        self.TP = T,p
-           
-        return jac2D
-
-
-
-    def jacobian_const_v(self):
-        """Computes numerical Jacobian.
-        Returns a N_s+1 x N_s+1 array [jac]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
-        #setup the state vector
-        T = self.T
+        P = self.P
         rho = self.density
         y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_v()   #ns+1-long (Y1,...,Yn,T)
-        
-        #create a jacobian vector
-        jac2D = np.zeros((self.n_species+1, self.n_species+1))
-        
-        #evaluate the Jacobian
-        for i in range(self.n_species):
-            dy = np.zeros(self.n_species)
-            dy[i] = max(sro*abs(y[i]),1e-8)
-            self.set_unnormalized_mass_fractions(y+dy)
-            ydotp = self.rhs_const_v()
-            dydot = ydotp-ydot
-            jac2D[:,i] = dydot/dy[i]
-        
-        self.Y = y
+        ydot = rhs()        #ns+1-long (Y1,...,Yn,T)
+        dy, dT = self._fd_steps(y, T)
 
-        dT = max(sro*abs(T),1e-3)
-        self.TD = T+dT,rho
-        ydotp = self.rhs_const_v()
-        dydot = ydotp-ydot
-        jac2D[:,-1] = dydot/dT
-        
-        self.TD = T,rho
-           
+        jac2D = np.zeros((self.n_species+1, self.n_species+1))
+        for i in range(self.n_species):
+            yp = y.copy()
+            yp[i] += dy[i]
+            self._set_constrained_state(yp, T, P, rho, problemtype)
+            jac2D[:,i] = (rhs()-ydot)/dy[i]
+
+        self._set_constrained_state(y, T+dT, P, rho, problemtype)
+        jac2D[:,-1] = (rhs()-ydot)/dT
+
+        self._set_constrained_state(y, T, P, rho, problemtype)
         return jac2D
-    
-    
-    
+
+    def jacobian_const_p(self):
+        """Computes numerical Jacobian at constant pressure.
+        Returns a N_s+1 x N_s+1 array [jac]."""
+        return self._numerical_jacobian('const_p')
+
+    def jacobian_const_v(self):
+        """Computes numerical Jacobian at constant density.
+        Returns a N_s+1 x N_s+1 array [jac]."""
+        return self._numerical_jacobian('const_v')
+
+
     def jac_contribution(self):
         """Computes contributions of each reaction to numerical Jacobian.
-        Given that g = Sr = Sum_k S_k r^k, it follows that      
-        J(g) = Sum_k^(2nr) J_k, where J_k = Jac(S_k r^k)   
-        S_k r^k is the product of the k-th column of the matrix S and the k-th 
-        component of the vector r. 
-        Returns a list of 2*Nr  (N_s+1 x N_s+1) arrays [jacK]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
+        Given that g = Sr = Sum_k S_k r^k, it follows that
+        J(g) = Sum_k^(2nr) J_k, where J_k = Jac(S_k r^k)
+        S_k r^k is the product of the k-th column of the matrix S and the k-th
+        component of the vector r.
+        Returns a (2*Nr, nv, nv) array [jacK], whose sum over the first axis
+        equals the (full or kinetic) Jacobian."""
+        problemtype = self.problemtype
+        if problemtype not in ('const_p', 'const_v'):
+            raise ValueError("Need to set either constP or constRho value")
         nv = self.nv
         ns = self.n_species
         nr = self.n_reactions
-        #setup the state vector
         T = self.T
-        y = self.Y   #ns-long
-        Smat = self.generalized_Stoich_matrix   # ns x 2nr
-        rvec = self.R_vector    # 2nr-long
-
-        
-        Smatp = np.zeros((nv,nv,2*nr))
-        rvecp = np.zeros((nv,2*nr))       
-        #evaluate Smat and Rvec in y+dy[i]
-        for i in range(ns):
-            dy = np.zeros(ns)
-            dy[i] = max(sro*abs(y[i]),1e-8)
-            self.set_unnormalized_mass_fractions(y+dy)
-            Smatp[i] = self.generalized_Stoich_matrix
-            rvecp[i] = self.R_vector
-        
-        if(nv==ns+1):            
-            self.Y = y  #reset original Y
-            dT = max(sro*abs(T),1e-3)
-            self.TP = T+dT,self.P
-            Smatp[-1] = self.generalized_Stoich_matrix
-            rvecp[-1] = self.R_vector
-     
-            self.TP = T,self.P  #reset original T,P
-        
-        
-        JacK = np.zeros((2*nr,nv,nv))
-        #evaluate derivatives per each reaction
-        for k in range(2*nr):
-            jac2D = np.zeros((nv,nv))
-            for i in range(ns):
-                dy = np.zeros(ns)
-                dy[i] = max(sro*abs(y[i]),1e-8)
-                ydotp = Smatp[i,:,k]*rvecp[i,k]
-                ydot  = Smat[:,k]*rvec[k]
-                dydot = ydotp-ydot
-                jac2D[:,i] = dydot/dy[i]
-            
-            if(nv==ns+1): 
-                ydotp = Smatp[-1,:,k]*rvecp[-1,k]
-                ydot  = Smat[:,k]*rvec[k]
-                dydot = ydotp-ydot
-                dT = max(sro*abs(T),1e-3)
-                jac2D[:,-1] = dydot/dT
-            
-            JacK[k] = jac2D
-        
-        #to check for correctness, in main program:
-        #jack = gas.jac_contribution()
-        #jac=np.sum(jack,axis=0)
-        #jacn = gas.jac_numeric()
-        #np.allclose(jac,jacn,rtol=1e-8,atol=1e-12)
-        
-        return JacK
-    
-    
-    def jacobian_diagonal_const_p(self):
-        """Computes (an approx. to) the diagonal of the numerical Jacobian.
-        Returns a N_s+1 array [diagjac]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
-        #setup the state vector
-        T = self.T
-        p = self.P
-        y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_p()   #ns+1-long (Y1,...,Yn,T)
-        
-        #create a jacobian vector
-        diagjac = np.zeros((self.n_species+1))
-        
-        #evaluate the Jacobian
-        dy = np.zeros(self.n_species)
-        dy = [max(sro*abs(y[i]),1e-8) for i in range(self.n_species)]
-        dT = max(sro*abs(T),1e-3)
-        self.set_unnormalized_mass_fractions(y+dy)
-        self.TP = T+dT,self.P
-        ydotp = self.rhs_const_p()
-        dydot = ydotp-ydot
-        diagjac[:-1] = dydot[:-1]/dy
-        diagjac[-1] = dydot[-1]/dT
-        
-        self.Y = y
-        self.TP = T,p
-           
-        return diagjac
-
-
-
-    def jacobian_diagonal_const_v(self):
-        """Computes (an approx. to) the diagonal of the numerical Jacobian.
-        Returns a N_s+1 [diagjac]. Input must be an instance of the CSPCantera class"""
-        roundoff = np.finfo(float).eps
-        sro = np.sqrt(roundoff)
-        #setup the state vector
-        T = self.T
+        P = self.P
         rho = self.density
         y = self.Y.copy()   #ns-long
-        ydot = self.rhs_const_v()   #ns+1-long (Y1,...,Yn,T)
-        
-        #create a jacobian vector
-        diagjac = np.zeros((self.n_species+1))
-        
-        #evaluate the Jacobian
-        dy = np.zeros(self.n_species)
-        dy = [max(sro*abs(y[i]),1e-8) for i in range(self.n_species)]
-        dT = max(sro*abs(T),1e-3)
-        self.set_unnormalized_mass_fractions(y+dy)
-        self.TD = T+dT,rho
-        ydotp = self.rhs_const_p()
-        dydot = ydotp-ydot
+        dy, dT = self._fd_steps(y, T)
+        Sr = self.generalized_Stoich_matrix * self.R_vector   # nv x 2nr, column k = S_k r^k
+
+        JacK = np.zeros((2*nr,nv,nv))
+        for i in range(ns):
+            yp = y.copy()
+            yp[i] += dy[i]
+            self._set_constrained_state(yp, T, P, rho, problemtype)
+            Srp = self.generalized_Stoich_matrix * self.R_vector
+            JacK[:,:,i] = np.transpose((Srp - Sr)/dy[i])
+
+        if nv == ns+1:
+            self._set_constrained_state(y, T+dT, P, rho, problemtype)
+            Srp = self.generalized_Stoich_matrix * self.R_vector
+            JacK[:,:,-1] = np.transpose((Srp - Sr)/dT)
+
+        self._set_constrained_state(y, T, P, rho, problemtype)
+        return JacK
+
+
+    def _numerical_jacobian_diagonal(self, problemtype):
+        """Approximates the Jacobian diagonal with one simultaneous perturbation
+        of all variables (cheap, used by the G-Scheme basis-reuse heuristic)."""
+        rhs = self.rhs_const_p if problemtype == 'const_p' else self.rhs_const_v
+        T = self.T
+        P = self.P
+        rho = self.density
+        y = self.Y.copy()
+        ydot = rhs()
+        dy, dT = self._fd_steps(y, T)
+        self._set_constrained_state(y+dy, T+dT, P, rho, problemtype)
+        dydot = rhs()-ydot
+        diagjac = np.zeros(self.n_species+1)
         diagjac[:-1] = dydot[:-1]/dy
         diagjac[-1] = dydot[-1]/dT
-        
-        self.Y = y
-        self.TD = T,rho
-           
+        self._set_constrained_state(y, T, P, rho, problemtype)
         return diagjac
-    
+
+    def jacobian_diagonal_const_p(self):
+        """Computes (an approx. to) the diagonal of the numerical Jacobian at
+        constant pressure. Returns a N_s+1 array [diagjac]."""
+        return self._numerical_jacobian_diagonal('const_p')
+
+    def jacobian_diagonal_const_v(self):
+        """Computes (an approx. to) the diagonal of the numerical Jacobian at
+        constant density. Returns a N_s+1 array [diagjac]."""
+        return self._numerical_jacobian_diagonal('const_v')
+
     """ ~~~~~~~~~~~~ OTHER JAC FORMULATIONS ~~~~~~~~~~~~~
     """
 
     def jacThermal(self):
+        """Correction that constrains the species Jacobian to the manifold of
+        constant enthalpy (const_p) or constant internal energy (const_v):
+        J_constrained = J_YY - jacThermal, with
+        jacThermal[i,j] = dg_i/dT * e_j/c, where e_j = h_j, c = cp (const_p)
+        or e_j = u_j, c = cv (const_v), mass-specific species properties."""
         ns = self.n_species
-        R = ct.gas_constant
-        hspec = self.standard_enthalpies_RT
-        Hspec = hspec * R * self.T
+        RT = ct.gas_constant * self.T
         Wk = self.molecular_weights
-        cp = self.cp_mass
-        TJrow = Hspec / ( Wk * cp)
+        if self.problemtype == 'const_v':
+            espec = self.standard_int_energies_RT * RT / Wk
+            c = self.cv_mass
+        else:
+            espec = self.standard_enthalpies_RT * RT / Wk
+            c = self.cp_mass
+        TJrow = espec / c
         TJcol = self.jacobian[0:ns,-1]
         JacThermal = np.outer(TJcol,TJrow)
         return JacThermal
@@ -472,7 +394,6 @@ class CanteraThermoKinetics(ct.Solution):
         tot=[*range(0, nv, 1)]
         minor_ind = list(set(tot) - set(major_ind)) + list(set(major_ind) - set(tot))
         mask = minor_ind + major_ind
-        #print(mask)
         sortedJac = Jac[mask][:,mask]
         
         # Build Jacobian constrained to SIM 

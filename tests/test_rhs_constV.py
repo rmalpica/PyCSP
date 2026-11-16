@@ -1,95 +1,38 @@
 # -*- coding: utf-8 -*-
 """
+Constant-volume reactor: the chemical source term must equal S.r, and the
+temperature equation must match the constant-volume energy balance.
+
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
+Run with pytest, or as a script (python test_rhs_constV.py) to also plot.
 """
-import cantera as ct
 import numpy as np
-import matplotlib.pyplot as plt
-import PyCSP.Functions as csp
+import cantera as ct
 
-#create gas from original mechanism file hydrogen.cti
-gas = csp.CanteraCSP('hydrogen.yaml')
-
-#set the gas state
-T = 1000
-P = ct.one_atm
-gas.TP = T, P
-#gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
-gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
-
-#push density
-rho = gas.density
-gas.constRho = rho
+from test_rhs import compute
+from conftest import make_gas
 
 
-#set jacobiantype
-gas.jacobiantype = 'full'
-
-#integrate ODE
-r = ct.IdealGasReactor(gas)
-sim = ct.ReactorNet([r])
-time = 0.0
-states = ct.SolutionArray(gas, extra=['t'])
-
-RHS = []
-splitRHS = []
-varnames = np.array(gas.species_names+['Temperature'])
-sim.set_initial_time(0.0)
-while sim.time < 1.e-3:
-    sim.step()
-    states.append(r.thermo.state, t=sim.time)
-    print('%10.3e %10.3f %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.density, r.thermo.u))
-    rhs = gas.source
-    Smat = gas.generalized_Stoich_matrix
-    rvec = gas.R_vector
-    splitrhs = np.dot(Smat,rvec)
-    checksplitrhs = np.isclose(rhs, splitrhs, rtol=1e-6, atol=1e-6, equal_nan=False)
-    if(np.any(checksplitrhs == False)):
-        idx = np.array([*range(len(rhs))]) 
-        print('Mismatch between numerical RHS and S.r')
-        print(varnames[~checksplitrhs],rhs[~checksplitrhs],splitrhs[~checksplitrhs])
-    RHS.append(rhs)
-    splitRHS.append(splitrhs)
+def test_rhs_equals_Sr_constV():
+    traj, RHS, splitRHS = compute("const_v", 1e-3)
+    scale = np.abs(RHS).max(axis=0) + 1e-300
+    assert np.max(np.abs(RHS - splitRHS) / scale) < 1e-8
 
 
-RHS = np.array(RHS)
-splitRHS = np.array(splitRHS)
+def test_temperature_equation_constV():
+    """dT/dt = -sum_k u_k wdot_k / (rho cv) at constant volume."""
+    traj, RHS, _ = compute("const_v", 1e-3)
+    for st, rhs in zip(traj[::20], RHS[::20]):
+        gas = make_gas("const_v", st)
+        U = gas.standard_int_energies_RT * ct.gas_constant * gas.T
+        ref = -np.dot(U, gas.net_production_rates) / (gas.density * gas.cv_mass)
+        assert rhs[-1] == np.float64(rhs[-1]) and abs(rhs[-1] - ref) <= 1e-10 * max(abs(ref), 1.0)
 
-#plot solution
-print('plotting ODE solution...')
-plt.clf()
-plt.subplot(2, 2, 1)
-plt.plot(states.t, states.T)
-plt.xlabel('Time (s)')
-plt.ylabel('Temperature (K)')
-plt.xlim(0., 0.001)
-plt.subplot(2, 2, 2)
-plt.plot(states.t, states.X[:,gas.species_index('OH')])
-plt.xlabel('Time (s)')
-plt.ylabel('OH Mole Fraction')
-plt.xlim(0., 0.001)
-plt.subplot(2, 2, 3)
-plt.plot(states.t, states.X[:,gas.species_index('H')])
-plt.xlabel('Time (s)')
-plt.ylabel('H Mole Fraction')
-plt.xlim(0., 0.001)
-plt.subplot(2, 2, 4)
-plt.plot(states.t, states.X[:,gas.species_index('H2')])
-plt.xlabel('Time (s)')
-plt.ylabel('H2 Mole Fraction')
-plt.xlim(0., 0.001)
-plt.tight_layout()
-plt.show()
 
-#plot RHS(T)
-
-print('plotting RHS...')
-fig, ax = plt.subplots(figsize=(6,4))
-ax.plot(states.t, RHS[:,-1], color='black', label='rhs')
-ax.plot(states.t, splitRHS[:,-1], color='red', linestyle='--',label='S.r')
-ax.set_xlabel('time (s)')
-ax.set_ylabel('rhs[T]')
-ax.set_xlim([0., 0.001])
-ax.grid(False)
-ax.legend()
-plt.show()
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    traj, RHS, splitRHS = compute("const_v", 1e-3)
+    T = [s[0] for s in traj]
+    plt.plot(T, RHS[:, -1], "k", label="rhs")
+    plt.plot(T, splitRHS[:, -1], "r--", label="S.r")
+    plt.xlabel("Temperature (K)"); plt.ylabel("rhs[T]"); plt.legend(); plt.show()

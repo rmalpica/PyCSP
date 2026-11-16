@@ -27,7 +27,7 @@ sim = ct.ReactorNet([r])
 time = 0.0
 states = ct.SolutionArray(gas, extra=['t'])
 
-sim.set_initial_time(0.0)
+sim.initial_time = 0.0
 while sim.time < 0.001:
     sim.step()
     states.append(r.thermo.state, t=sim.time)
@@ -48,7 +48,7 @@ Temp = data[:,1]
 Pressure = data[:,2]
 Y =  data[:,3:]
 
-gas = csp.CanteraCSP('hydrogen.cti')
+gas = csp.CanteraCSP('hydrogen.yaml')
 
 #set jacobiantype
 gas.jacobiantype = 'full'

@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.10"
+            cantera: "3.0"     # oldest supported Cantera
+          - python: "3.12"
+            cantera: "3.1"
+          - python: "3.12"
+            cantera: "*"       # latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: ${{ matrix.python }}
+          activate-environment: pycsp
+      - name: Install dependencies
+        run: |
+          conda install -y -c conda-forge "cantera=${{ matrix.cantera }}" numpy matplotlib pandas pytest
+          pip install --no-deps -e .
+      - name: Run tests
+        run: pytest -q

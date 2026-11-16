@@ -1,90 +1,59 @@
 # -*- coding: utf-8 -*-
 """
+CSP kernel along a constant-pressure H2/air ignition trajectory.
+
 @author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy
+Run with pytest, or as a script (python test_kernel.py) to also plot the
+eigenvalue evolution.
 """
-import cantera as ct
 import numpy as np
-import matplotlib.pyplot as plt
-import sys
-import PyCSP.Functions as csp
 
-#create gas from original mechanism file hydrogen.cti
-gas = csp.CanteraCSP('hydrogen.yaml')
+from conftest import h2_trajectory, make_gas
 
 
-#set the gas state
-T = 1000
-P = ct.one_atm
-#gas.TPX = T, P, "H2:2.0, O2:1, N2:3.76"
-gas.TP = T, P
-gas.set_equivalence_ratio(1.0, 'H2', 'O2:1, N2:3.76')
-gas.constP = P
-gas.jacobiantype = 'full'
-
-#integrate ODE
-r = ct.IdealGasConstPressureReactor(gas)
-sim = ct.ReactorNet([r])
-time = 0.0
-states = ct.SolutionArray(gas, extra=['t'])
-
-evals = []
-Revec = []
-Levec = []
-fvec = []
-sim.set_initial_time(0.0)
-while sim.time < 1000:
-    sim.step()
-    states.append(r.thermo.state, t=sim.time)
-    print('%10.3e %10.3f %10.3f %14.6e' % (sim.time, r.T, r.thermo.P, r.thermo.u))
-    lam,R,L,f = gas.get_kernel()
-    evals.append(lam)
-    Revec.append(R)
-    Levec.append(L)
-    fvec.append(f)
-
-evals = np.array(evals)
-Revec = np.array(Revec)
-Levec = np.array(Levec)
-fvec = np.array(fvec)
+def compute(tend=1.0e-2):
+    traj = h2_trajectory("const_p", tend)
+    out = []
+    for st in traj:
+        gas = make_gas("const_p", st)
+        lam, R, L, f = gas.get_kernel()
+        out.append((st[0], lam, R, L, f, gas.n_elements, gas.rhs))
+    return out
 
 
-#plot solution
-print('plotting ODE solution...')
-plt.clf()
-plt.subplot(2, 2, 1)
-plt.plot(states.t, states.T)
-plt.xlabel('Time (s)')
-plt.ylabel('Temperature (K)')
-plt.xlim(0., 0.002)
-plt.subplot(2, 2, 2)
-plt.plot(states.t, states.X[:,gas.species_index('OH')])
-plt.xlabel('Time (s)')
-plt.ylabel('OH Mole Fraction')
-plt.xlim(0., 0.002)
-plt.subplot(2, 2, 3)
-plt.plot(states.t, states.X[:,gas.species_index('H')])
-plt.xlabel('Time (s)')
-plt.ylabel('H Mole Fraction')
-plt.xlim(0., 0.002)
-plt.subplot(2, 2, 4)
-plt.plot(states.t, states.X[:,gas.species_index('H2')])
-plt.xlabel('Time (s)')
-plt.ylabel('H2 Mole Fraction')
-plt.xlim(0., 0.002)
-plt.tight_layout()
-plt.show()
+def test_kernel_properties():
+    for T, lam, R, L, f, nel, rhs in compute()[::10]:
+        nv = len(lam)
+        # biorthonormal basis: B A = I (rows of R are the right vectors)
+        assert np.allclose(L @ R.T, np.eye(nv), atol=1e-8)
+        # eigenvalues sorted by decreasing magnitude, conserved modes zeroed
+        assert np.all(np.diff(np.abs(lam)) <= 1e-12 * np.abs(lam).max())
+        assert np.all(lam[nv - nel:] == 0)
+        # amplitudes are non-negative and reconstruct the rhs: g = A f
+        assert np.all(f >= 0)
+        assert np.allclose(R.T @ f, rhs, rtol=1e-6, atol=1e-8 * np.abs(rhs).max())
 
-#plot eigenvalues
-logevals = np.clip(np.log10(1.0+np.abs(evals.real)),0,100)*np.sign(evals.real)
-print('plotting eigenvalues...')
-fig, ax = plt.subplots(figsize=(6,4))
-for idx in range(evals.shape[1]):
-    #color = next(ax._get_lines.prop_cycler)['color']
-    ax.plot(states.t, logevals[:,idx], color='black', marker='.', markersize = 2,linestyle = 'None')
-ax.set_xlabel('time (s)')
-ax.set_ylabel('evals')
-ax.set_ylim([-9, 6])
-ax.set_xlim([0., 0.001])
-ax.grid(False)
-plt.show()
-#plt.savefig('figures/prediction_combined.png', dpi=500, transparent=False)
+
+def test_ignition_explosive_mode():
+    """During induction the leading non-conserved eigenvalue has a positive real
+    part (explosive mode); at equilibrium all non-conserved eigenvalues are negative."""
+    res = compute()
+    lam_ind = res[len(res) // 10][1]
+    lam_eq = res[-1][1]
+    assert np.any(lam_ind.real > 0)
+    nel = res[-1][5]
+    lam_eq = lam_eq[: len(lam_eq) - nel]
+    # ignore round-off-sized eigenvalues (e.g. the quasi-conserved enthalpy mode)
+    significant = np.abs(lam_eq) > 1e-8 * np.abs(lam_eq).max()
+    assert np.all(lam_eq[significant].real < 0)
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    res = compute()
+    T = np.array([r[0] for r in res])
+    evals = np.array([r[1] for r in res])
+    logevals = np.clip(np.log10(1.0 + np.abs(evals.real)), 0, 100) * np.sign(evals.real)
+    for idx in range(evals.shape[1]):
+        plt.plot(T, logevals[:, idx], "k.", markersize=2)
+    plt.xlabel("Temperature (K)"); plt.ylabel("evals"); plt.show()

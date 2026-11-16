@@ -4,27 +4,42 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyCSP-lib"
-version = "1.4.0.post2"
+version = "1.5.0"
 authors = [
   { name="Riccardo Malpica Galassi", email="riccardo.malpicagalassi@uniroma1.it" },
 ]
 description = "A collection of tools for the Computational Singular Perturbation analysis of chemically reacting flows"
 readme = "README.md"
-requires-python = ">=3"
+requires-python = ">=3.9"
+license = "LicenseRef-Prosperity-3.0.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
 ]
-
 dependencies = [
     "numpy",
     "matplotlib",
     "cantera>=3.0.0",
-    "pandas"
-    # Add more dependencies here
+    "pandas",
 ]
-license = "MIT"
-license-files = ["LICENSE"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [project.urls]
 Homepage = "https://github.com/rmalpica/PyCSP"
+Documentation = "https://rmalpica.github.io/PyCSP/"
+
+[tool.setuptools]
+packages = ["PyCSP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    # Cantera >= 3.2 deprecations triggered by user-facing reactor setup, not by PyCSP
+    "ignore::DeprecationWarning:cantera.*",
+]

@@ -1,5 +1,8 @@
 include README.md
 include LICENSE
-recursive-include documentation *
 include logo.png
 include requirements.txt
+include tests/*.py
+include tests/hydrogen.yaml
+include tests/golden/*.py
+include tests/golden/*.npz

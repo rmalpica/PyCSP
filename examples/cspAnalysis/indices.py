@@ -25,8 +25,8 @@ gas.constP = P
 
 #edit CSP parameters
 gas.jacobiantype='full'
-gas.rtol=1.0e-3
-gas.atol=1.0e-10
+gas.rtol=1.0e-4
+gas.atol=1.0e-12
 
 
 #integrate ODE
