@@ -1,0 +1,4318 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Computational Singular Perturbation tools for the analysis and simplification of chemically reacting systems">
+      
+      
+        <meta name="author" content="Riccardo Malpica Galassi">
+      
+      
+        <link rel="canonical" href="https://rmalpica.github.io/PyCSP/reference/">
+      
+      
+        <link rel="prev" href="../examples/tsr/">
+      
+      
+        <link rel="next" href="../references/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/img/logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>API reference (docstrings) - PyCSP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Serif+4:300,300i,400,400i,700,700i%7CSource+Code+Pro:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"Source Code Pro"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../assets/css/pycsp.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-reference-docstrings" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PyCSP" class="md-header__button md-logo" aria-label="PyCSP" data-md-component="logo">
+      
+  <img src="../assets/img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyCSP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              API reference (docstrings)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/rmalpica/PyCSP" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rmalpica/PyCSP
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PyCSP" class="md-nav__button md-logo" aria-label="PyCSP" data-md-component="logo">
+      
+  <img src="../assets/img/logo.png" alt="logo">
+
+    </a>
+    PyCSP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/rmalpica/PyCSP" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    rmalpica/PyCSP
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../theory/analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSP and TSR analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../theory/simplification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mechanism simplification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../theory/solvers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSP solver and G-Scheme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classes, attributes and methods
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Classes, attributes and methods
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/thermokinetics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ThermoKinetics.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/solver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Solver.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/gscheme/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GScheme.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/simplify/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simplify.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utils.py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/csp-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSP analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/full-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Full CSP analysis and plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/csp-solver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSP solver and G-Scheme
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/csp-simplify/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSP simplify
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/tsr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TSR analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference (docstrings)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference (docstrings)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ThermoKinetics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ThermoKinetics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CanteraThermoKinetics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CanteraThermoKinetics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rhs_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rhs_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generalized_Stoich_matrix_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generalized_Stoich_matrix_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.Rates_vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rates_vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jac_contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jac_contribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_diagonal_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_diagonal_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacThermal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacThermal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CanteraCSP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CanteraCSP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.get_kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_exhausted_modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_exhausted_modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_subspaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_subspaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_TSR" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_TSR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_CSPindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_CSPindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSR" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_extended_TSR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_extended_TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel_kinetic_only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel_kinetic_only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel_constrained_jac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel_constrained_jac
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.clean_conserved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clean_conserved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.detectFrozenModes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        detectFrozenModes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.TSR_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TSR_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.eigsys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        eigsys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.evec_pos_ampl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evec_pos_ampl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSPIndices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPIndices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSPIndices_one_var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPIndices_one_var
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_amplitude_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_amplitude_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_importance_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_importance_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.classify_species" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify_species
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_participation_to_one_timescale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_participation_to_one_timescale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_timescale_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_timescale_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Solver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solver
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.GScheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GScheme
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Simplify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simplify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Simplify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.CSPsimplify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPsimplify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CSPsimplify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.CSPsimplify.norm_cut" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        norm_cut
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.merge_mechanisms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge_mechanisms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TaggedDatabase
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TaggedDatabase">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase.store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase.to_arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_arrays
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.shared_reactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shared_reactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.select_eval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select_eval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.reorder_evals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reorder_evals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.integrate_batch_constP" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integrate_batch_constP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.integrate_batch_constV" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integrate_batch_constV
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.find_duplicate_reactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        find_duplicate_reactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.plot_index_over_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_index_over_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.save_CSP_plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_CSP_plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ThermoKinetics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ThermoKinetics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CanteraThermoKinetics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CanteraThermoKinetics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rhs_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rhs_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generalized_Stoich_matrix_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generalized_Stoich_matrix_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.Rates_vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rates_vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jac_contribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jac_contribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_p" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_diagonal_const_p
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_v" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacobian_diagonal_const_v
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacThermal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jacThermal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CanteraCSP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CanteraCSP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.get_kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_exhausted_modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_exhausted_modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_subspaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_subspaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_TSR" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_TSR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_CSPindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_CSPindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSR" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_extended_TSR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calc_extended_TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel_kinetic_only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel_kinetic_only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.kernel_constrained_jac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kernel_constrained_jac
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CanteraCSP.clean_conserved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clean_conserved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.detectFrozenModes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        detectFrozenModes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.TSRindices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TSRindices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.TSR_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TSR_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.eigsys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        eigsys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.evec_pos_ampl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evec_pos_ampl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSPIndices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPIndices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSPIndices_one_var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPIndices_one_var
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_amplitude_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_amplitude_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_importance_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_importance_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.classify_species" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify_species
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_participation_to_one_timescale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_participation_to_one_timescale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Functions.CSP_timescale_participation_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSP_timescale_participation_indices
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Solver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solver
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.GScheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GScheme
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.Simplify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simplify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Simplify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.CSPsimplify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSPsimplify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CSPsimplify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.CSPsimplify.norm_cut" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        norm_cut
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.Simplify.merge_mechanisms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge_mechanisms
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#PyCSP.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TaggedDatabase
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TaggedDatabase">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase.store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.TaggedDatabase.to_arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_arrays
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.shared_reactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shared_reactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.select_eval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        select_eval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.reorder_evals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reorder_evals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.integrate_batch_constP" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integrate_batch_constP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.integrate_batch_constV" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        integrate_batch_constV
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.find_duplicate_reactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        find_duplicate_reactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.plot_index_over_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_index_over_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#PyCSP.utils.save_CSP_plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_CSP_plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="api-reference-docstrings">API reference (docstrings)<a class="headerlink" href="#api-reference-docstrings" title="Permanent link">&para;</a></h1>
+<p>This page is generated automatically from the docstrings of the source code. The hand-written description of the classes, in the same layout as the original PDF manual, is in <a href="../api/">Classes, attributes and methods</a>.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.ThermoKinetics" class="doc doc-heading">
+            <code>PyCSP.ThermoKinetics</code>
+
+
+<a href="#PyCSP.ThermoKinetics" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="PyCSP.ThermoKinetics.CanteraThermoKinetics" class="doc doc-heading">
+            <code>CanteraThermoKinetics</code>
+
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="cantera.Solution">Solution</span></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_p" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rhs_const_p</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_p" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes chemical RHS [shape:(ns+1)] for a constant pressure reactor.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_v" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rhs_const_v</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.rhs_const_v" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes chemical RHS [shape:(ns+1)] for a constant volume reactor.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_p" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generalized_Stoich_matrix_const_p</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_p" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>N_v x 2*N_r matrix containing the S components in column major format, 
+such that S dot Rvec yields RHS</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_v" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generalized_Stoich_matrix_const_v</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.generalized_Stoich_matrix_const_v" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>N_v x 2*N_r matrix containing the S components in column major format, 
+such that S dot Rvec yields RHS</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.Rates_vector" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">Rates_vector</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.Rates_vector" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>2*Nr-long vector containing the rates of progress in [Kmol/m3/s]</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_p" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jacobian_const_p</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_p" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes numerical Jacobian at constant pressure.
+Returns a N_s+1 x N_s+1 array [jac].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_v" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jacobian_const_v</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_const_v" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes numerical Jacobian at constant density.
+Returns a N_s+1 x N_s+1 array [jac].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jac_contribution" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jac_contribution</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jac_contribution" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes contributions of each reaction to numerical Jacobian.
+Given that g = Sr = Sum_k S_k r^k, it follows that
+J(g) = Sum_k^(2nr) J_k, where J_k = Jac(S_k r^k)
+S_k r^k is the product of the k-th column of the matrix S and the k-th
+component of the vector r.
+Returns a (2*Nr, nv, nv) array [jacK], whose sum over the first axis
+equals the (full or kinetic) Jacobian.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_p" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jacobian_diagonal_const_p</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_p" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes (an approx. to) the diagonal of the numerical Jacobian at
+constant pressure. Returns a N_s+1 array [diagjac].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_v" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jacobian_diagonal_const_v</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacobian_diagonal_const_v" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes (an approx. to) the diagonal of the numerical Jacobian at
+constant density. Returns a N_s+1 array [diagjac].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.ThermoKinetics.CanteraThermoKinetics.jacThermal" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">jacThermal</span><span class="p">()</span></code>
+
+<a href="#PyCSP.ThermoKinetics.CanteraThermoKinetics.jacThermal" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Correction that constrains the species Jacobian to the manifold of
+constant enthalpy (const_p) or constant internal energy (const_v):
+J_constrained = J_YY - jacThermal, with
+jacThermal[i,j] = dg_i/dT * e_j/c, where e_j = h_j, c = cp (const_p)
+or e_j = u_j, c = cv (const_v), mass-specific species properties.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.Functions" class="doc doc-heading">
+            <code>PyCSP.Functions</code>
+
+
+<a href="#PyCSP.Functions" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="PyCSP.Functions.CanteraCSP" class="doc doc-heading">
+            <code>CanteraCSP</code>
+
+
+<a href="#PyCSP.Functions.CanteraCSP" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="CanteraThermoKinetics (PyCSP.ThermoKinetics.CanteraThermoKinetics)" href="#PyCSP.ThermoKinetics.CanteraThermoKinetics">CanteraThermoKinetics</a></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.get_kernel" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_kernel</span><span class="p">()</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.get_kernel" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Retrieves the stored CSP kernel.
+If any attributes changed before latest query, kernel is recomputed</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_exhausted_modes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_exhausted_modes</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_exhausted_modes" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of exhausted modes (M). 
+Optional arguments are rtol and atol for the calculation of M.
+If not provided, uses default or previously set values</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_subspaces" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_subspaces</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_subspaces" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes subspaces partitioning (M and H). 
+Optional arguments are rtol and atol for the calculation of M, and rtol and atol for the calculation of H.
+If not provided, uses default or previously set values</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_TSR" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_TSR</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_TSR" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of exhausted modes (M) and the TSR. 
+Optional arguments are rtol and atol for the calculation of M.
+If not provided, uses default or previously set values.
+The calculated value of M can be retrieved by passing
+the optional argument getM=True</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_TSRindices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_TSRindices</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_TSRindices" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of exhausted modes (M), the TSR and its indices. 
+Optional argument is type, which can be timescale or amplitude.
+Default value is amplitude.
+Other optional arguments are rtol and atol for the calculation of M.
+If not provided, uses default or previously set values.
+The TSR value can be retrieved by passing getTSR=True, in which case
+the method returns (TSR, indices).
+Optional norm_cut (scalar or nv-long array, default None): with
+index_norm='abs', modes whose CSP indices have a sum of absolute
+contributions smaller than norm_cut get zero indices (units of that sum:
+1/s for type='timescale', the mode-amplitude units for type='amplitude').</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_CSPindices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_CSPindices</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_CSPindices" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of exhausted modes (M) and the CSP Indices.
+Boolean keywords select the indices to compute (all default False):
+API (amplitude participation), TPI (timescale participation),
+Impo (fast/slow importance), species_type (fast/slow/trace species).
+Returns [API, TPI, Ifast, Islow, species_type] (None for those not
+requested), plus M if getM=True.
+Optional arguments are rtol and atol for the calculation of M.
+If not provided, uses default or previously set values.
+Optional norm_cut (scalar or nv-long array, default None): with
+index_norm='abs', rows (modes for API/TPI, variables for Ifast/Islow)
+whose sum of absolute contributions is smaller than norm_cut are set
+to zero instead of being normalized (units of that sum: the rate of
+the mode amplitude or variable, 1/s for TPI).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_extended_TSR" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_extended_TSR</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSR" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of Extended exhausted modes (Mext) and the extended TSR. 
+Caller must provide either a diffusion rhs with the keyword diff
+or a convection rhs with the keyword conv, or both (nv-long arrays).
+Optional arguments are rtol and atol for the calculation of Mext.
+If not provided, uses default or previously set values.
+The calculated value of Mext can be retrieved by passing
+the optional argument getMext=True</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.calc_extended_TSRindices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calc_extended_TSRindices</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.calc_extended_TSRindices" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes number of Extended exhausted modes (Mext), the extended TSR and its indices. 
+Caller must provide either a diffusion rhs with the keyword diff
+or a convection rhs with the keyword conv, or both (nv-long arrays).
+Other optional arguments are rtol and atol for the calculation of Mext.
+If not provided, uses default or previously set values.
+The extended TSR can be retrieved by passing the optional argument
+getTSRext=True, in which case the method returns (TSR_ext, indices).
+Indices refer to the 2Nr reactions, then the nv convection and the
+nv diffusion terms.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.kernel" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">kernel</span><span class="p">()</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.kernel" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes CSP kernel. Its dimension is Nspecies + 1.
+Returns [evals,Revec,Levec,amplitudes].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.kernel_kinetic_only" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">kernel_kinetic_only</span><span class="p">()</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.kernel_kinetic_only" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes kinetic kernel. Its dimension is Nspecies.
+Returns [evals,Revec,Levec,amplitudes].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.kernel_constrained_jac" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">kernel_constrained_jac</span><span class="p">()</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.kernel_constrained_jac" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes constrained kernel (constant enthalpy for const_p, constant internal energy for const_v). Its dimension is Nspecies.
+Returns [evals,Revec,Levec,amplitudes].</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.Functions.CanteraCSP.clean_conserved" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clean_conserved</span><span class="p">(</span><span class="n">evals</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CanteraCSP.clean_conserved" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Zero-out conserved modes eigenvalues</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.detectFrozenModes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">detectFrozenModes</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">stateYT</span><span class="p">,</span> <span class="n">Revec</span><span class="p">,</span> <span class="n">Levec</span><span class="p">,</span> <span class="n">Smat</span><span class="p">,</span> <span class="n">rvec</span><span class="p">,</span> <span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.detectFrozenModes" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Identifies frozen modes among the M exhausted modes (or all modes, if needed).
+A mode is frozen if the sum of absolute projected reaction rates is small.</p>
+
+
+<details class="parameters:" open>
+  <summary>Parameters:</summary>
+  <p>M : int
+    Number of exhausted modes (returned by findM).
+stateYT : array
+    State vector [Species... , T].
+Revec : array
+    Right eigenvectors (rows).
+Levec : array
+    Left eigenvectors (rows).
+Smat : array
+    Stoichiometric matrix.
+rvec : array
+    Reaction rates vector.
+rtol : float
+    Relative tolerance.
+atol : float
+    Absolute tolerance.</p>
+</details>
+
+<details class="returns:" open>
+  <summary>Returns:</summary>
+  <p>frozen_indices : list
+    Indices of modes that are frozen.</p>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.TSRindices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">TSRindices</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">evals</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.TSRindices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Nv array containing participation index of mode i to TSR</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.TSR_participation_indices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">TSR_participation_indices</span><span class="p">(</span><span class="n">TSRidx</span><span class="p">,</span> <span class="n">CSPidx</span><span class="p">,</span> <span class="n">normtype</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.TSR_participation_indices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>2Nr array containing participation index of reaction k to TSR</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.eigsys" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">eigsys</span><span class="p">(</span><span class="n">jac</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.eigsys" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns eigensystem (evals, Revec, Levec). Input must be a 2D array.
+Both Revec (since it is transposed) and Levec (naturally) contain row vectors,
+such that an eigenvector can be retrieved using R/Levec[index,:]</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.evec_pos_ampl" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">evec_pos_ampl</span><span class="p">(</span><span class="n">Revec</span><span class="p">,</span> <span class="n">Levec</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.evec_pos_ampl" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>changes sign to eigenvectors based on sign of corresponding mode amplitude.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSPIndices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSPIndices</span><span class="p">(</span><span class="n">Proj</span><span class="p">,</span> <span class="n">Smat</span><span class="p">,</span> <span class="n">rvec</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSPIndices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a Nv x 2Nr matrix of indexes, computed as Proj S r.
+Optional norm_cut (scalar or Nv-long array): rows whose sum of absolute
+contributions is below the cut are set to zero (only with normtype='abs').</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSPIndices_one_var" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSPIndices_one_var</span><span class="p">(</span><span class="n">Proj_i</span><span class="p">,</span> <span class="n">Smat</span><span class="p">,</span> <span class="n">rvec</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSPIndices_one_var" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Given the i-th row of the projector, computes 2Nr indexes of reactions to variable i.
+Proj_i must be a nv-long array. Returns a 2Nr-long array</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSP_amplitude_participation_indices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSP_amplitude_participation_indices</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">Smat</span><span class="p">,</span> <span class="n">rvec</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSP_amplitude_participation_indices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Nv x 2Nr array containing participation index of reaction k to mode i</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSP_importance_indices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSP_importance_indices</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">Smat</span><span class="p">,</span> <span class="n">rvec</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSP_importance_indices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Nv x 2Nr arrays containing fast/slow importance index of reaction k to variable i</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSP_pointers" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSP_pointers</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSP_pointers" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>CSP pointers following Lam &amp; Goussis.
+- pointers[m,k] = diag_k(Q_m)
+- Q_m = A_m B_m 
+- m is the mode index
+- k is the species index</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.classify_species" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">classify_species</span><span class="p">(</span><span class="n">stateYT</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">pointers</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">trace</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.classify_species" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>CSP species classification following Lam &amp; Goussis.
+- pointers[m,k] = diag_k(Q_m)
+- M = number of fast modes</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSP_participation_to_one_timescale" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSP_participation_to_one_timescale</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">nr</span><span class="p">,</span> <span class="n">JacK</span><span class="p">,</span> <span class="n">evals</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSP_participation_to_one_timescale" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>2Nr-long array of contributions of each reaction to the i-th eigenvalue
+(its real part for a complex-conjugate pair): lambda_i = sum_k b^i J_k a_i.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Functions.CSP_timescale_participation_indices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CSP_timescale_participation_indices</span><span class="p">(</span><span class="n">nr</span><span class="p">,</span> <span class="n">JacK</span><span class="p">,</span> <span class="n">evals</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">normtype</span><span class="p">,</span> <span class="n">norm_cut</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Functions.CSP_timescale_participation_indices" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Nv x 2Nr array containing TPI of reaction k to mode i</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.Solver" class="doc doc-heading">
+            <code>PyCSP.Solver</code>
+
+
+<a href="#PyCSP.Solver" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Created on Tue Jan  5 12:26:32 2021</p>
+<p>@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.GScheme" class="doc doc-heading">
+            <code>PyCSP.GScheme</code>
+
+
+<a href="#PyCSP.GScheme" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Created on Mon Sep  11 15:41:22 2023
+Last update on Wed Nov 20 2024
+@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.Simplify" class="doc doc-heading">
+            <code>PyCSP.Simplify</code>
+
+
+<a href="#PyCSP.Simplify" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Created on Tue Jan  5 12:26:32 2021</p>
+<p>@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="PyCSP.Simplify.CSPsimplify" class="doc doc-heading">
+            <code>CSPsimplify</code>
+
+
+<a href="#PyCSP.Simplify.CSPsimplify" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="PyCSP.Simplify.CSPsimplify.norm_cut" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">norm_cut</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+      <small class="doc doc-label doc-label-writable"><code>writable</code></small>
+  </span>
+
+<a href="#PyCSP.Simplify.CSPsimplify.norm_cut" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Optional scalar cut on the sum of absolute contributions below which CSP
+importance / TSR indices are set to zero (see CanteraCSP.calc_CSPindices).</p>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.Simplify.merge_mechanisms" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">merge_mechanisms</span><span class="p">(</span><span class="n">gasdtl</span><span class="p">,</span> <span class="n">species1</span><span class="p">,</span> <span class="n">species2</span><span class="p">)</span></code>
+
+<a href="#PyCSP.Simplify.merge_mechanisms" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>gasdtl</code>
+            </td>
+            <td>
+                  <code>Cantera&#39;s Solution object</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Cantera's Solution object of the detailed mechanism.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>species1</code>
+            </td>
+            <td>
+                  <code>Python List </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List object containing the species of first mech, e.g. mech.species_names.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>species2</code>
+            </td>
+            <td>
+                  <code>Python List</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List object containing the species of first mech, e.g. mech.species_names.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>species</code></td>            <td>
+                  <code>Python List</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of the species of the merged mechanism.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td><code>reactions</code></td>            <td>
+                  <code>Python List</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of the reactions of the merged mechanism..</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="PyCSP.utils" class="doc doc-heading">
+            <code>PyCSP.utils</code>
+
+
+<a href="#PyCSP.utils" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Created on Wed Dec 23 17:51:37 2020</p>
+<p>@author: Riccardo Malpica Galassi, Sapienza University, Roma, Italy</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="PyCSP.utils.TaggedDatabase" class="doc doc-heading">
+            <code>TaggedDatabase</code>
+
+
+<a href="#PyCSP.utils.TaggedDatabase" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>A simple database to store time series data during simulations.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.utils.TaggedDatabase.store" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.TaggedDatabase.store" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Store values for the given tags.
+Usage: db.store(time=0.1, temp=300, ...)</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="PyCSP.utils.TaggedDatabase.to_arrays" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">to_arrays</span><span class="p">()</span></code>
+
+<a href="#PyCSP.utils.TaggedDatabase.to_arrays" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert all stored lists to numpy arrays.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.shared_reactor" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">shared_reactor</span><span class="p">(</span><span class="n">reactor_class</span><span class="p">,</span> <span class="n">gas</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.shared_reactor" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Creates a Cantera reactor that shares (does not clone) the <code>gas</code> object,
+so that <code>gas</code> follows the integrated state and CSP quantities can be
+queried directly on it. Cantera &gt; 3.2 clones the phase by default.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.select_eval" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">select_eval</span><span class="p">(</span><span class="n">evals</span><span class="p">,</span> <span class="n">indexes</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.select_eval" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>evals</code>
+            </td>
+            <td>
+                  <code>2D numpy array containing a series of eigenvalues.</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>indexes</code>
+            </td>
+            <td>
+                  <code>1D numpy array with integer indexes (e.g. M). Note that indexes start from zero!</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>eval</code></td>            <td>
+                  <code>1D numpy array with selected eigenvalues</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.reorder_evals" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reorder_evals</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.reorder_evals" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>ev</code>
+            </td>
+            <td>
+                  <code>2D numpy array containing a series of eigenvalues.</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>times</code>
+            </td>
+            <td>
+                  <code>1D numpy array containing the corresponding times</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>newev</code></td>            <td>
+                  <code>2D numpy array with continuous (along dim=0) eigenvalues</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.integrate_batch_constP" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">integrate_batch_constP</span><span class="p">(</span><span class="n">gas</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">eqratio</span><span class="p">,</span> <span class="n">FuComp</span><span class="p">,</span> <span class="n">OxComp</span><span class="p">,</span> <span class="n">tend</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-09</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-15</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.integrate_batch_constP" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Integrates the constant-pressure batch reactor.</p>
+<p>Parameters:
+    gas (ct.Solution): Cantera gas object.
+    temperature (float): Initial temperature [K].
+    pressure (float): Initial pressure [Pa].
+    eqratio (float): Equivalence ratio.
+    FuComp (str): Fuel composition.
+    OxComp (str): Oxidizer composition.
+    tend (float): End time for the simulation [s].
+    rtol (float): Relative tolerance for the integrator.
+    atol (float): Absolute tolerance for the integrator.</p>
+<p>Returns:
+    ct.SolutionArray: Solution array containing states and additional data.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.integrate_batch_constV" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">integrate_batch_constV</span><span class="p">(</span><span class="n">gas</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">eqratio</span><span class="p">,</span> <span class="n">FuComp</span><span class="p">,</span> <span class="n">OxComp</span><span class="p">,</span> <span class="n">tend</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-09</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-15</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.integrate_batch_constV" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Integrates the constant-volume batch reactor.</p>
+<p>Parameters:
+    gas (ct.Solution): Cantera gas object.
+    temperature (float): Initial temperature [K].
+    pressure (float): Initial pressure [Pa].
+    eqratio (float): Equivalence ratio.
+    FuComp (str): Fuel composition.
+    OxComp (str): Oxidizer composition.
+    tend (float): End time for the simulation [s].
+    rtol (float): Relative tolerance for the integrator.
+    atol (float): Absolute tolerance for the integrator.</p>
+<p>Returns:
+    ct.SolutionArray: Solution array containing states and additional data.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.find_duplicate_reactions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">find_duplicate_reactions</span><span class="p">(</span><span class="n">R</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.find_duplicate_reactions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>R</code>
+            </td>
+            <td>
+                  <code>an instance of a Reaction object, e.g.:</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>R</code>
+            </td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>duplicates</code></td>            <td>
+                  <code>a list of lists of duplicate reactions</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.plot_index_over_time" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_index_over_time</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'time [s]'</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.plot_index_over_time" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Helper function to plot indices over time.
+data: 2D array (time, items)
+names: list of names for items
+threshold: relative threshold (fraction of max absolute value)</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="PyCSP.utils.save_CSP_plots" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">save_CSP_plots</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">gas</span><span class="p">,</span> <span class="n">output_folder</span><span class="o">=</span><span class="s1">'CSP_Plots'</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'time [s]'</span><span class="p">,</span> <span class="n">species_threshold</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span></code>
+
+<a href="#PyCSP.utils.save_CSP_plots" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generates and saves all requested CSP plots.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../examples/tsr/" class="md-footer__link md-footer__link--prev" aria-label="Previous: TSR analysis">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                TSR analysis
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../references/" class="md-footer__link md-footer__link--next" aria-label="Next: References">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                References
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 Riccardo Malpica Galassi &mdash; Prosperity Public License 3.0.0
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "content.code.copy", "search.highlight"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="../assets/js/mathjax-config.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
