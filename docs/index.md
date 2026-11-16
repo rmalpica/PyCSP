@@ -79,6 +79,7 @@ Other bug fixes:
 - TPI are not available for `jacobiantype='constrained'` (the thermal correction is not split by reaction): a `NotImplementedError` is raised instead of returning inconsistent values.
 - `utils.save_CSP_plots`: fixed crashes with short time series, and the rate-of-progress and RHS plots.
 - `CSPsimplify.get_tsrtarget` no longer fails for `TSRtol = 1`.
+- The order of the two eigenvalues of a complex-conjugate pair (negative imaginary part first) no longer depends on the platform's sorting algorithm.
 - `CSPsolver`/`GScheme.set_integrator` raise a `ValueError` on unknown keywords instead of exiting the interpreter; `profiling()` no longer divides by zero.
 
 New features and changes:

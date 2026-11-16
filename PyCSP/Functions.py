@@ -732,8 +732,10 @@ def eigsys(jac):
     
     evals, Revec = np.linalg.eig(jac)
     
-    #sort 
-    idx = np.argsort(abs(evals))[::-1]   
+    #sort by decreasing modulus. A stable sort makes the order of a complex-conjugate
+    #pair (equal moduli) platform-independent: LAPACK returns the eigenvalue with
+    #positive imaginary part first, so after the reversal the negative one comes first.
+    idx = np.argsort(abs(evals), kind='stable')[::-1]
     evals = evals[idx]
     Revec = Revec[:,idx]
     

@@ -66,8 +66,10 @@ def test_jacobian_matches_constrained_reference(h2_states, ptype):
         gas = make_gas(ptype, st)
         Jref = reference_jacobian(gas, ptype)
         J = gas.jacobian
-        # round-off in the restored state gives <~1e-7; the rho-fixed (pre-1.5) Jacobian fails by O(1)
-        assert _col_close(J, Jref, 1e-6), "jacobian not taken at constant %s" % (
+        # Both are forward differences with the same steps: they differ only by round-off
+        # in the restored state, amplified by the 1e-8 floor step (up to ~1e-5, platform
+        # dependent). The rho-fixed (pre-1.5) Jacobian fails by more than 0.5.
+        assert _col_close(J, Jref, 1e-4), "jacobian not taken at constant %s" % (
             "P" if ptype == "const_p" else "rho")
 
 
@@ -262,3 +264,27 @@ def test_TPI_constrained_not_supported(h2_states):
         gas.calc_CSPindices(TPI=True)
     with pytest.raises(NotImplementedError):
         gas.calc_TSRindices(type="timescale")
+
+
+def test_eigsys_order_is_deterministic():
+    """Eigenvalues sorted by decreasing modulus; within a complex-conjugate pair
+    (equal moduli) the negative imaginary part comes first, on every platform.
+    The golden masters rely on this order."""
+    rng = np.random.default_rng(0)
+    blocks = []
+    for a, b in ((-3.0, 4.0), (-1.0, 2.0), (-0.5, 0.25)):
+        blocks.append(np.array([[a, b], [-b, a]]))     # eigenvalues a +/- i b
+    D = np.zeros((8, 8))
+    for k, blk in enumerate(blocks):
+        D[2*k:2*k+2, 2*k:2*k+2] = blk
+    D[6, 6], D[7, 7] = 2.0, -2.0                      # real tie in modulus
+    Q = rng.standard_normal((8, 8))
+    evals, A, B = csp.eigsys(Q @ D @ np.linalg.inv(Q))
+    assert np.all(np.diff(np.abs(evals)) <= 1e-9)
+    for i in np.flatnonzero(evals.imag < 0):
+        assert np.isclose(evals[i + 1], np.conj(evals[i]))
+    first_of_pairs = [i for i in range(len(evals) - 1)
+                      if evals[i].imag != 0 and np.isclose(evals[i + 1], np.conj(evals[i]))]
+    assert len(first_of_pairs) == 3
+    assert all(evals[i].imag < 0 for i in first_of_pairs)
+    assert np.allclose(B @ A.T, np.eye(8), atol=1e-8)   # A holds right eigenvectors as rows
